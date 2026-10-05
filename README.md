@@ -23,33 +23,31 @@ evaluación: completitud, optimidad, complejidad temporal y complejidad espacial
 | 6 | Juego del 21 | [...] | [...] |
 | 7 | Pac-Man | [...] | [...] |
 
-
 ## Estructura del repositorio
 
-​```
+```
 search-lab/
 └── README.md
-​```
+```
 
 Cada carpeta contiene su propia implementación y un README breve con el problema,
 las metodologías usadas y cómo ejecutarlo.
 
 ## Tecnologías
 
-- Lenguaje: [...]
-- Framework / librerías: [...]
+- Lenguaje: _por definir_
+- Framework / librerías: _por definir_
 
 ## Instalación
 
-​```bash
+```bash
 git clone https://github.com/Diegootm/search-lab.git
 cd search-lab
-
-​```
+```
 
 ## Equipo
 
-- 
+- _por definir_
 
 ## Materia
 
