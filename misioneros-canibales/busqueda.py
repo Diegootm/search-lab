@@ -61,3 +61,41 @@ class PasoExpansion:
     sucesores: list[SucesorTraza]
     frontera: list[tuple[Estado, int, int]]  # (estado, g, h) tras la expansión
     es_meta: bool = False  # True si en este paso se selecciona el nodo objetivo
+
+@dataclass
+class ResultadoBusqueda:
+    algoritmo: str
+    solucion: Nodo | None
+    nodos_generados: int = 0
+    nodos_expandidos: int = 0
+    estados_visitados: int = 0
+    descartados_repetidos: int = 0
+    descartados_invalidos: int = 0
+    max_frontera: int = 0
+    tiempo_ms: float = 0.0
+    traza: list[PasoExpansion] = field(default_factory=list)
+    arbol: list[Nodo] = field(default_factory=list)
+
+    @property
+    def encontrada(self) -> bool:
+        return self.solucion is not None
+
+    @property
+    def ruta(self) -> list[Nodo]:
+        return self.solucion.ruta() if self.solucion else []
+
+    @property
+    def longitud(self) -> int:
+        """Número de movimientos (cruces) de la solución."""
+        return max(len(self.ruta) - 1, 0)
+
+    @property
+    def costo(self) -> int:
+        return self.solucion.g if self.solucion else 0
+
+    @property
+    def factor_ramificacion(self) -> float:
+        """Factor de ramificación efectivo promedio (generados / expandidos)."""
+        if not self.nodos_expandidos:
+            return 0.0
+        return (self.nodos_generados - 1) / self.nodos_expandidos
