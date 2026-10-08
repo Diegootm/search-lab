@@ -15,3 +15,29 @@ REPETIDO = "repetido"
 INVALIDO = "invalido"
 OBJETIVO = "objetivo"
 
+
+@dataclass
+class Nodo:
+    """Nodo del árbol de búsqueda."""
+
+    id: int
+    estado: Estado
+    padre: "Nodo | None" = None
+    accion: tuple[int, int] | None = None
+    g: int = 0       # costo acumulado desde el inicio (número de cruces)
+    h: int = 0       # valor heurístico (0 en BFS)
+    profundidad: int = 0
+
+    @property
+    def f(self) -> int:
+        return self.g + self.h
+
+    def ruta(self) -> list["Nodo"]:
+        """Reconstruye la ruta siguiendo los punteros al padre."""
+        nodos = []
+        actual: Nodo | None = self
+        while actual is not None:
+            nodos.append(actual)
+            actual = actual.padre
+        nodos.reverse()
+        return nodos
