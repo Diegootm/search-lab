@@ -99,3 +99,36 @@ class ResultadoBusqueda:
         if not self.nodos_expandidos:
             return 0.0
         return (self.nodos_generados - 1) / self.nodos_expandidos
+
+class _Contador:
+    def __init__(self) -> None:
+        self.valor = 0
+
+    def siguiente(self) -> int:
+        self.valor += 1
+        return self.valor
+
+
+def _expandir(nodo: Nodo, contador: _Contador, h: Callable[[Estado], int],
+              resultado: ResultadoBusqueda):
+    """Genera los hijos de ``nodo``. Devuelve (hijos válidos, trazas)."""
+    hijos: list[Nodo] = []
+    trazas: list[SucesorTraza] = []
+    for accion, estado, motivo in P.todos_los_sucesores(nodo.estado):
+        if motivo is not None:
+            resultado.descartados_invalidos += 1
+            trazas.append(SucesorTraza(accion, estado, INVALIDO, motivo))
+            continue
+        hijo = Nodo(
+            id=contador.siguiente(),
+            estado=estado,
+            padre=nodo,
+            accion=accion,
+            g=nodo.g + P.COSTO_CRUCE,
+            h=h(estado),
+            profundidad=nodo.profundidad + 1,
+        )
+        resultado.nodos_generados += 1
+        hijos.append(hijo)
+        trazas.append(SucesorTraza(accion, estado, NUEVO, None, hijo.g, hijo.h))
+    return hijos, trazas
