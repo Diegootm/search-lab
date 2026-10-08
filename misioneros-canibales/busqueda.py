@@ -179,3 +179,62 @@ def bfs(inicial: Estado = P.ESTADO_INICIAL) -> ResultadoBusqueda:
     resultado.estados_visitados = len(alcanzados)
     resultado.tiempo_ms = (time.perf_counter() - inicio) * 1000
     return resultado
+
+def a_estrella(inicial: Estado = P.ESTADO_INICIAL,
+               heuristica: Callable[[Estado], int] = P.h_cruces_minimos) -> ResultadoBusqueda:
+    """Búsqueda A* (búsqueda en grafo, frontera ordenada por f = g + h).
+
+    El test objetivo se aplica al EXPANDIR el nodo, condición necesaria para
+    garantizar optimalidad. Desempates: menor h y luego orden de llegada (FIFO).
+    """
+    nombre_h = next((k for k, v in P.HEURISTICAS.items() if v is heuristica), "h")
+    resultado = ResultadoBusqueda(f"A* (h = {nombre_h})", None)
+    inicio = time.perf_counter()
+    contador = _Contador()
+
+    raiz = Nodo(id=contador.siguiente(), estado=inicial, h=heuristica(inicial))
+    resultado.nodos_generados = 1
+    resultado.arbol.append(raiz)
+
+    mejor_g: dict[Estado, int] = {inicial: 0}
+    cerrados: set[Estado] = set()
+    frontera: list[tuple[int, int, int, Nodo]] = [(raiz.f, raiz.h, raiz.id, raiz)]
+    resultado.max_frontera = 1
+
+    while frontera:
+        _f, _h, _id, nodo = heapq.heappop(frontera)
+        if nodo.estado in cerrados or nodo.g > mejor_g.get(nodo.estado, nodo.g):
+            continue  # entrada obsoleta de la cola de prioridad
+        if P.es_objetivo(nodo.estado):
+            resultado.solucion = nodo
+            # Registrar el paso final (se selecciona el objetivo, no se expande)
+            resultado.traza.append(PasoExpansion(
+                resultado.nodos_expandidos + 1, nodo, [],
+                [(n.estado, n.g, n.h) for *_x, n in sorted(frontera)], es_meta=True))
+            break
+        cerrados.add(nodo.estado)
+        resultado.nodos_expandidos += 1
+        hijos, trazas = _expandir(nodo, contador, heuristica, resultado)
+        traza_por_hijo = [t for t in trazas if t.tipo != INVALIDO]
+        for hijo, traza in zip(hijos, traza_por_hijo):
+            if hijo.estado in cerrados or hijo.g >= mejor_g.get(hijo.estado, float("inf")):
+                resultado.descartados_repetidos += 1
+                traza.tipo = REPETIDO
+                continue
+            mejor_g[hijo.estado] = hijo.g
+            resultado.arbol.append(hijo)
+            heapq.heappush(frontera, (hijo.f, hijo.h, hijo.id, hijo))
+        resultado.max_frontera = max(resultado.max_frontera, len(frontera))
+        resultado.traza.append(PasoExpansion(
+            resultado.nodos_expandidos, nodo, trazas,
+            [(n.estado, n.g, n.h) for *_x, n in sorted(frontera)]))
+
+    resultado.estados_visitados = len(mejor_g)
+    resultado.tiempo_ms = (time.perf_counter() - inicio) * 1000
+    return resultado
+
+
+ALGORITMOS: dict[str, Callable[[], ResultadoBusqueda]] = {
+    "bfs": bfs,
+    "astar": a_estrella,
+}
