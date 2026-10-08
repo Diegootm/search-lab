@@ -132,3 +132,50 @@ def _expandir(nodo: Nodo, contador: _Contador, h: Callable[[Estado], int],
         hijos.append(hijo)
         trazas.append(SucesorTraza(accion, estado, NUEVO, None, hijo.g, hijo.h))
     return hijos, trazas
+
+def bfs(inicial: Estado = P.ESTADO_INICIAL) -> ResultadoBusqueda:
+    """Búsqueda en anchura (búsqueda en grafo, frontera FIFO).
+
+    El test objetivo se aplica al GENERAR cada nodo (como en Russell & Norvig),
+    lo que es correcto porque todos los cruces cuestan lo mismo.
+    """
+    resultado = ResultadoBusqueda("BFS (Anchura)", None)
+    inicio = time.perf_counter()
+    contador = _Contador()
+    sin_heuristica: Callable[[Estado], int] = lambda _e: 0
+
+    raiz = Nodo(id=contador.siguiente(), estado=inicial)
+    resultado.nodos_generados = 1
+    resultado.arbol.append(raiz)
+    alcanzados: set[Estado] = {inicial}
+
+    if P.es_objetivo(inicial):
+        resultado.solucion = raiz
+    else:
+        frontera: deque[Nodo] = deque([raiz])
+        resultado.max_frontera = 1
+        while frontera and resultado.solucion is None:
+            nodo = frontera.popleft()
+            resultado.nodos_expandidos += 1
+            hijos, trazas = _expandir(nodo, contador, sin_heuristica, resultado)
+            traza_por_hijo = [t for t in trazas if t.tipo != INVALIDO]
+            for hijo, traza in zip(hijos, traza_por_hijo):
+                if hijo.estado in alcanzados:
+                    resultado.descartados_repetidos += 1
+                    traza.tipo = REPETIDO
+                    continue
+                alcanzados.add(hijo.estado)
+                resultado.arbol.append(hijo)
+                if P.es_objetivo(hijo.estado):
+                    traza.tipo = OBJETIVO
+                    resultado.solucion = hijo
+                    break
+                frontera.append(hijo)
+            resultado.max_frontera = max(resultado.max_frontera, len(frontera))
+            resultado.traza.append(PasoExpansion(
+                resultado.nodos_expandidos, nodo, trazas,
+                [(n.estado, n.g, n.h) for n in frontera]))
+
+    resultado.estados_visitados = len(alcanzados)
+    resultado.tiempo_ms = (time.perf_counter() - inicio) * 1000
+    return resultado
