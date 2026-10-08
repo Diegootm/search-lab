@@ -41,3 +41,23 @@ class Nodo:
             actual = actual.padre
         nodos.reverse()
         return nodos
+
+@dataclass
+class SucesorTraza:
+    accion: tuple[int, int]
+    estado: Estado
+    tipo: str               # NUEVO, REPETIDO, INVALIDO u OBJETIVO
+    motivo: str | None = None
+    g: int = 0
+    h: int = 0
+
+
+@dataclass
+class PasoExpansion:
+    """Un paso del proceso: el nodo que se expande y lo que generó."""
+
+    numero: int
+    nodo: Nodo
+    sucesores: list[SucesorTraza]
+    frontera: list[tuple[Estado, int, int]]  # (estado, g, h) tras la expansión
+    es_meta: bool = False  # True si en este paso se selecciona el nodo objetivo
