@@ -127,3 +127,29 @@ class TestEtapa05RangoYOrillaSegura(unittest.TestCase):
         self.assertTrue(P.orilla_segura(3, 1))
         self.assertFalse(P.orilla_segura(1, 2))
         self.assertFalse(P.orilla_segura(2, 3))
+
+
+
+class TestEtapa06Validez(unittest.TestCase):
+    def test_estados_validos(self):
+        for estado in [P.Estado(3, 3, 1), P.Estado(3, 1, 0), P.Estado(2, 2, 1), P.Estado(0, 3, 1),
+                       P.Estado(3, 0, 0), P.Estado(1, 1, 0), P.Estado(0, 0, 0)]:
+            self.assertTrue(P.es_valido(estado), estado)
+            self.assertIsNone(P.motivo_invalidez(estado), estado)
+
+    def test_canibales_superan_en_la_izquierda(self):
+        self.assertFalse(P.es_valido(P.Estado(2, 3, 0)))
+        self.assertEqual(P.motivo_invalidez(P.Estado(1, 3, 0)), "orilla izquierda: 3C > 1M")
+
+    def test_canibales_superan_en_la_derecha(self):
+        # izquierda (2, 1) segura, pero derecha (1, 2): 2C > 1M
+        self.assertFalse(P.es_valido(P.Estado(2, 1, 0)))
+        self.assertEqual(P.motivo_invalidez(P.Estado(2, 1, 0)), "orilla derecha: 2C > 1M")
+
+    def test_sin_misioneros_no_hay_peligro(self):
+        self.assertTrue(P.es_valido(P.Estado(0, 3, 1)))
+
+    def test_fuera_de_rango(self):
+        self.assertFalse(P.es_valido(P.Estado(4, 3, 1)))
+        self.assertFalse(P.es_valido(P.Estado(-1, 0, 0)))
+        self.assertIn("suficientes", P.motivo_invalidez(P.Estado(0, -1, 1)))
