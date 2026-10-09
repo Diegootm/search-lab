@@ -142,3 +142,21 @@ def accion_permitida(accion: tuple[int, int]) -> bool:
     """El bote debe llevar entre 1 y CAPACIDAD_BOTE personas."""
     m, c = accion
     return m >= 0 and c >= 0 and 1 <= m + c <= CAPACIDAD_BOTE
+
+
+
+def todos_los_sucesores(estado: Estado) -> list[tuple[tuple[int, int], Estado, str | None]]:
+    """Aplica todos los operadores y devuelve (acción, estado, motivo_invalidez).
+
+    Útil para mostrar también los movimientos inválidos que se descartan.
+    """
+    resultado = []
+    for accion in ACCIONES:
+        nuevo = aplicar(estado, accion)
+        resultado.append((accion, nuevo, motivo_invalidez(nuevo)))
+    return resultado
+
+
+def sucesores(estado: Estado) -> list[tuple[tuple[int, int], Estado]]:
+    """Función sucesor: pares (acción, estado resultante) válidos."""
+    return [(a, s) for a, s, motivo in todos_los_sucesores(estado) if motivo is None]
