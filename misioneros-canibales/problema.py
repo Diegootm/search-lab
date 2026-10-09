@@ -100,3 +100,24 @@ def en_rango(estado: Estado) -> bool:
 def orilla_segura(misioneros: int, canibales: int) -> bool:
     """La orilla es segura si no hay misioneros o no son superados."""
     return misioneros == 0 or misioneros >= canibales
+
+
+
+def es_valido(estado: Estado) -> bool:
+    """Estado válido: dentro de rango y con ambas orillas seguras."""
+    if not en_rango(estado):
+        return False
+    m_der, c_der = estado.derecha
+    return orilla_segura(estado.m, estado.c) and orilla_segura(m_der, c_der)
+
+
+def motivo_invalidez(estado: Estado) -> str | None:
+    """Explica por qué un estado es inválido (``None`` si es válido)."""
+    if not en_rango(estado):
+        return "no hay suficientes personas en la orilla de partida"
+    m_der, c_der = estado.derecha
+    if not orilla_segura(estado.m, estado.c):
+        return f"orilla izquierda: {estado.c}C > {estado.m}M"
+    if not orilla_segura(m_der, c_der):
+        return f"orilla derecha: {c_der}C > {m_der}M"
+    return None
