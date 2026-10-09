@@ -39,3 +39,18 @@ CAPACIDAD_BOTE = 2
 
 IZQUIERDA = 1
 DERECHA = 0
+
+
+
+class Estado(NamedTuple):
+    m: int  # misioneros en la orilla izquierda
+    c: int  # caníbales en la orilla izquierda
+    b: int  # 1 = bote a la izquierda, 0 = bote a la derecha
+
+    def __str__(self) -> str:
+        return f"({self.m}, {self.c}, {self.b})"
+
+    @property
+    def derecha(self) -> tuple[int, int]:
+        """(misioneros, caníbales) en la orilla derecha."""
+        return N_MISIONEROS - self.m, N_CANIBALES - self.c
