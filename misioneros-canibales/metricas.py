@@ -55,3 +55,14 @@ def tabla_metricas(resultado: ResultadoBusqueda) -> list[tuple[str, str]]:
         ("Factor ramif. efectivo", f"{resultado.factor_ramificacion:.2f}"),
         ("Tiempo (ms)", f"{resultado.tiempo_ms:.3f}"),
     ]
+
+def ruta_texto(resultado: ResultadoBusqueda) -> list[str]:
+    """Ruta solución como lista de líneas legibles."""
+    lineas = []
+    for i, nodo in enumerate(resultado.ruta):
+        if nodo.padre is None:
+            lineas.append(f"{i:2d}. {nodo.estado}  Estado inicial")
+        else:
+            mov = P.describir_movimiento(nodo.accion, nodo.padre.estado)
+            lineas.append(f"{i:2d}. {nodo.estado}  {mov}")
+    return lineas
