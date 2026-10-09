@@ -89,3 +89,14 @@ def describir_movimiento(accion: tuple[int, int], origen: Estado) -> str:
     direccion = "izq → der" if origen.b == IZQUIERDA else "der → izq"
     verbo = "Cruza" if m + c == 1 else "Cruzan"
     return f"{verbo} {' y '.join(quienes)} ({direccion})"
+
+
+
+def en_rango(estado: Estado) -> bool:
+    """Comprueba que las cantidades y la posición del bote sean válidas."""
+    return 0 <= estado.m <= N_MISIONEROS and 0 <= estado.c <= N_CANIBALES and estado.b in (0, 1)
+
+
+def orilla_segura(misioneros: int, canibales: int) -> bool:
+    """La orilla es segura si no hay misioneros o no son superados."""
+    return misioneros == 0 or misioneros >= canibales
