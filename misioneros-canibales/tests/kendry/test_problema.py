@@ -164,3 +164,26 @@ class TestEtapa07TestObjetivo(unittest.TestCase):
         self.assertFalse(P.es_objetivo(P.Estado(0, 0, 1)))  # el bote quedó a la izquierda
         self.assertFalse(P.es_objetivo(P.ESTADO_INICIAL))
         self.assertFalse(P.es_objetivo(P.Estado(1, 1, 0)))
+
+
+
+class TestEtapa08AplicarOperadores(unittest.TestCase):
+    def test_bote_a_la_izquierda_resta(self):
+        self.assertEqual(P.aplicar(P.Estado(3, 3, 1), (1, 1)), P.Estado(2, 2, 0))
+
+    def test_bote_a_la_derecha_suma(self):
+        self.assertEqual(P.aplicar(P.Estado(2, 2, 0), (1, 0)), P.Estado(3, 2, 1))
+
+    def test_aplicar_no_valida(self):
+        nuevo = P.aplicar(P.Estado(3, 3, 1), (2, 0))
+        self.assertEqual(nuevo, P.Estado(1, 3, 0))
+        self.assertFalse(P.es_valido(nuevo))
+
+    def test_accion_permitida(self):
+        for accion in P.ACCIONES:
+            self.assertTrue(P.accion_permitida(accion), accion)
+        self.assertFalse(P.accion_permitida((0, 0)))  # el bote no viaja vacío
+        self.assertFalse(P.accion_permitida((2, 1)))  # más de 2 personas
+        self.assertFalse(P.accion_permitida((3, 0)))
+
+
