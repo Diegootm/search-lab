@@ -93,3 +93,19 @@ class TestEtapa03InicialObjetivoOperadores(unittest.TestCase):
 
     def test_costo_de_cada_cruce(self):
         self.assertEqual(P.COSTO_CRUCE, 1)
+
+
+
+class TestEtapa04TextoDeMovimientos(unittest.TestCase):
+    def test_nombre_accion(self):
+        self.assertEqual(P.nombre_accion((1, 0)), "1M")
+        self.assertEqual(P.nombre_accion((0, 2)), "2C")
+        self.assertEqual(P.nombre_accion((1, 1)), "1M 1C")
+
+    def test_describir_movimiento_singular_y_plural(self):
+        self.assertEqual(P.describir_movimiento((0, 1), P.Estado(3, 2, 0)),
+                         "Cruza 1 caníbal (der → izq)")
+        self.assertEqual(P.describir_movimiento((2, 0), P.Estado(3, 1, 1)),
+                         "Cruzan 2 misioneros (izq → der)")
+        self.assertEqual(P.describir_movimiento((1, 1), P.Estado(1, 1, 1)),
+                         "Cruzan 1 misionero y 1 caníbal (izq → der)")

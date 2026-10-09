@@ -64,3 +64,28 @@ ESTADO_OBJETIVO = Estado(0, 0, DERECHA)
 ACCIONES: tuple[tuple[int, int], ...] = ((1, 0), (2, 0), (0, 1), (0, 2), (1, 1))
 
 COSTO_CRUCE = 1
+
+
+
+def nombre_accion(accion: tuple[int, int]) -> str:
+    """Texto legible de un operador, p. ej. (1, 1) -> '1M 1C'."""
+    m, c = accion
+    partes = []
+    if m:
+        partes.append(f"{m}M")
+    if c:
+        partes.append(f"{c}C")
+    return " ".join(partes)
+
+
+def describir_movimiento(accion: tuple[int, int], origen: Estado) -> str:
+    """Descripción completa del movimiento, indicando la dirección del cruce."""
+    m, c = accion
+    quienes = []
+    if m:
+        quienes.append(f"{m} misionero{'s' if m > 1 else ''}")
+    if c:
+        quienes.append(f"{c} caníbal{'es' if c > 1 else ''}")
+    direccion = "izq → der" if origen.b == IZQUIERDA else "der → izq"
+    verbo = "Cruza" if m + c == 1 else "Cruzan"
+    return f"{verbo} {' y '.join(quienes)} ({direccion})"
