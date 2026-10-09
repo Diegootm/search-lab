@@ -25,3 +25,17 @@ EVALUACION_TEORICA = {
         "Complejidad espacial": "O(b^d) (guarda todos los nodos)",
     },
 }
+
+def medir_tiempo(algoritmo: Callable[[], ResultadoBusqueda], repeticiones: int = 200) -> dict:
+    """Ejecuta el algoritmo varias veces y devuelve estadísticas de tiempo (ms)."""
+    tiempos = []
+    for _ in range(repeticiones):
+        t0 = time.perf_counter()
+        algoritmo()
+        tiempos.append((time.perf_counter() - t0) * 1000)
+    return {
+        "promedio": statistics.mean(tiempos),
+        "mediana": statistics.median(tiempos),
+        "minimo": min(tiempos),
+        "maximo": max(tiempos),
+    }
