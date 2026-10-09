@@ -39,3 +39,19 @@ def medir_tiempo(algoritmo: Callable[[], ResultadoBusqueda], repeticiones: int =
         "minimo": min(tiempos),
         "maximo": max(tiempos),
     }
+
+def tabla_metricas(resultado: ResultadoBusqueda) -> list[tuple[str, str]]:
+    """Filas (nombre, valor) de las métricas de una ejecución."""
+    return [
+        ("Solución encontrada", "Sí" if resultado.encontrada else "No"),
+        ("Longitud (cruces)", str(resultado.longitud)),
+        ("Costo de la ruta", str(resultado.costo)),
+        ("Nodos generados", str(resultado.nodos_generados)),
+        ("Nodos expandidos", str(resultado.nodos_expandidos)),
+        ("Estados visitados", str(resultado.estados_visitados)),
+        ("Repetidos descartados", str(resultado.descartados_repetidos)),
+        ("Inválidos descartados", str(resultado.descartados_invalidos)),
+        ("Máx. tamaño frontera", str(resultado.max_frontera)),
+        ("Factor ramif. efectivo", f"{resultado.factor_ramificacion:.2f}"),
+        ("Tiempo (ms)", f"{resultado.tiempo_ms:.3f}"),
+    ]
