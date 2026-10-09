@@ -127,3 +127,18 @@ def motivo_invalidez(estado: Estado) -> str | None:
 def es_objetivo(estado: Estado) -> bool:
     """Test objetivo."""
     return estado == ESTADO_OBJETIVO
+
+
+
+def aplicar(estado: Estado, accion: tuple[int, int]) -> Estado:
+    """Aplica un operador SIN validar (puede producir estados inválidos)."""
+    m, c = accion
+    if estado.b == IZQUIERDA:
+        return Estado(estado.m - m, estado.c - c, DERECHA)
+    return Estado(estado.m + m, estado.c + c, IZQUIERDA)
+
+
+def accion_permitida(accion: tuple[int, int]) -> bool:
+    """El bote debe llevar entre 1 y CAPACIDAD_BOTE personas."""
+    m, c = accion
+    return m >= 0 and c >= 0 and 1 <= m + c <= CAPACIDAD_BOTE
