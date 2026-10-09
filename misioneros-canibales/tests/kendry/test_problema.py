@@ -109,3 +109,21 @@ class TestEtapa04TextoDeMovimientos(unittest.TestCase):
                          "Cruzan 2 misioneros (izq → der)")
         self.assertEqual(P.describir_movimiento((1, 1), P.Estado(1, 1, 1)),
                          "Cruzan 1 misionero y 1 caníbal (izq → der)")
+
+
+
+class TestEtapa05RangoYOrillaSegura(unittest.TestCase):
+    def test_en_rango(self):
+        self.assertTrue(P.en_rango(P.Estado(3, 3, 1)))
+        self.assertTrue(P.en_rango(P.Estado(0, 0, 0)))
+        self.assertFalse(P.en_rango(P.Estado(4, 3, 1)))
+        self.assertFalse(P.en_rango(P.Estado(-1, 0, 0)))
+        self.assertFalse(P.en_rango(P.Estado(0, -1, 1)))
+        self.assertFalse(P.en_rango(P.Estado(0, 0, 2)))
+
+    def test_orilla_segura(self):
+        self.assertTrue(P.orilla_segura(0, 3))
+        self.assertTrue(P.orilla_segura(2, 2))
+        self.assertTrue(P.orilla_segura(3, 1))
+        self.assertFalse(P.orilla_segura(1, 2))
+        self.assertFalse(P.orilla_segura(2, 3))
