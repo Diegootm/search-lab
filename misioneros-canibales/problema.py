@@ -185,3 +185,28 @@ def h_personas(estado: Estado) -> int:
     un solo cruce. Se conserva para comparación.
     """
     return estado.m + estado.c
+
+
+
+def h_cruces_minimos(estado: Estado) -> int:
+    """Heurística admisible y consistente basada en las personas que faltan.
+
+    Es el costo exacto del problema *relajado* (ignorando la restricción de los
+    caníbales). Con ``n = M + C`` personas en la orilla izquierda:
+
+    * bote a la izquierda: cada ida y vuelta adelanta como máximo 1 persona y el
+      último viaje lleva 2 -> ``2n - 3`` (``1`` si ``n == 1``; ``0`` si ``n == 0``).
+    * bote a la derecha: alguien debe volver primero -> ``2n`` (``0`` si ``n == 0``).
+    """
+    n = estado.m + estado.c
+    if n == 0:
+        return 0
+    if estado.b == IZQUIERDA:
+        return 1 if n <= CAPACIDAD_BOTE else 2 * n - 3
+    return 2 * n
+
+
+HEURISTICAS = {
+    "cruces": h_cruces_minimos,
+    "personas": h_personas,
+}

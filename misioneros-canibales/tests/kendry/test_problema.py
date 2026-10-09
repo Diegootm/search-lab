@@ -244,3 +244,29 @@ class TestEtapa11HeuristicaPersonas(unittest.TestCase):
         # Desde (1, 1, 1) basta un cruce (1M 1C), pero la heurística dice 2.
         self.assertTrue(P.es_objetivo(P.aplicar(P.Estado(1, 1, 1), (1, 1))))
         self.assertGreater(P.h_personas(P.Estado(1, 1, 1)), 1)
+
+
+
+class TestEtapa12HeuristicaCruces(unittest.TestCase):
+    def test_valores(self):
+        self.assertEqual(P.h_cruces_minimos(P.ESTADO_OBJETIVO), 0)
+        self.assertEqual(P.h_cruces_minimos(P.ESTADO_INICIAL), 9)
+        self.assertEqual(P.h_cruces_minimos(P.Estado(1, 1, 1)), 1)
+        self.assertEqual(P.h_cruces_minimos(P.Estado(3, 1, 0)), 8)
+        self.assertEqual(P.h_cruces_minimos(P.Estado(0, 1, 0)), 2)
+        self.assertEqual(P.h_cruces_minimos(P.Estado(0, 2, 1)), 1)
+
+    def test_es_consistente(self):
+        # h(n) <= costo(n, n') + h(n') para todo sucesor n'
+        for estado in P.estados_validos():
+            for _accion, nuevo in P.sucesores(estado):
+                self.assertLessEqual(P.h_cruces_minimos(estado),
+                                     P.COSTO_CRUCE + P.h_cruces_minimos(nuevo))
+
+    def test_es_admisible(self):
+        for estado, distancia in distancias_reales().items():
+            self.assertLessEqual(P.h_cruces_minimos(estado), distancia, estado)
+
+    def test_diccionario_de_heuristicas(self):
+        self.assertIs(P.HEURISTICAS["cruces"], P.h_cruces_minimos)
+        self.assertIs(P.HEURISTICAS["personas"], P.h_personas)
