@@ -211,3 +211,23 @@ class TestEtapa09FuncionSucesor(unittest.TestCase):
         for estado in estados_alcanzables():
             for accion, nuevo in P.sucesores(estado):
                 self.assertEqual(P.aplicar(nuevo, accion), estado)
+
+
+
+class TestEtapa10EspacioDeEstados(unittest.TestCase):
+    def test_total_de_estados(self):
+        todos = P.todos_los_estados()
+        self.assertEqual(len(todos), 32)
+        self.assertEqual(len(set(todos)), 32)
+
+    def test_estados_validos(self):
+        validos = P.estados_validos()
+        self.assertEqual(len(validos), 20)
+        self.assertTrue(all(P.es_valido(e) for e in validos))
+        self.assertIn(P.ESTADO_INICIAL, validos)
+        self.assertIn(P.ESTADO_OBJETIVO, validos)
+
+    def test_estados_alcanzables_desde_el_inicial(self):
+        alcanzables = estados_alcanzables()
+        self.assertEqual(len(alcanzables), 16)
+        self.assertTrue(alcanzables <= set(P.estados_validos()))
