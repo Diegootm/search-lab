@@ -60,3 +60,22 @@ class TestEtapa01Estructura(unittest.TestCase):
     def test_posiciones_del_bote(self):
         self.assertEqual(P.IZQUIERDA, 1)
         self.assertEqual(P.DERECHA, 0)
+
+
+
+class TestEtapa02Estado(unittest.TestCase):
+    def test_campos(self):
+        estado = P.Estado(3, 2, 1)
+        self.assertEqual((estado.m, estado.c, estado.b), (3, 2, 1))
+
+    def test_texto(self):
+        self.assertEqual(str(P.Estado(3, 2, 1)), "(3, 2, 1)")
+
+    def test_orilla_derecha_se_deduce(self):
+        self.assertEqual(P.Estado(1, 2, 0).derecha, (2, 1))
+        self.assertEqual(P.Estado(3, 3, 1).derecha, (0, 0))
+
+    def test_se_puede_usar_en_conjuntos_y_comparar(self):
+        visitados = {P.Estado(3, 3, 1), P.Estado(3, 3, 1)}
+        self.assertEqual(len(visitados), 1)
+        self.assertEqual(P.Estado(1, 1, 0), (1, 1, 0))
