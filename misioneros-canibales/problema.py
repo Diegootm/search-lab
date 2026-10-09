@@ -121,3 +121,9 @@ def motivo_invalidez(estado: Estado) -> str | None:
     if not orilla_segura(m_der, c_der):
         return f"orilla derecha: {c_der}C > {m_der}M"
     return None
+
+
+
+def es_objetivo(estado: Estado) -> bool:
+    """Test objetivo."""
+    return estado == ESTADO_OBJETIVO
