@@ -54,3 +54,13 @@ class Estado(NamedTuple):
     def derecha(self) -> tuple[int, int]:
         """(misioneros, caníbales) en la orilla derecha."""
         return N_MISIONEROS - self.m, N_CANIBALES - self.c
+
+
+
+ESTADO_INICIAL = Estado(N_MISIONEROS, N_CANIBALES, IZQUIERDA)
+ESTADO_OBJETIVO = Estado(0, 0, DERECHA)
+
+# Operadores: (misioneros en el bote, caníbales en el bote)
+ACCIONES: tuple[tuple[int, int], ...] = ((1, 0), (2, 0), (0, 1), (0, 2), (1, 1))
+
+COSTO_CRUCE = 1

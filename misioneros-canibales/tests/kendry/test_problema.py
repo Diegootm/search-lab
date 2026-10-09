@@ -79,3 +79,17 @@ class TestEtapa02Estado(unittest.TestCase):
         visitados = {P.Estado(3, 3, 1), P.Estado(3, 3, 1)}
         self.assertEqual(len(visitados), 1)
         self.assertEqual(P.Estado(1, 1, 0), (1, 1, 0))
+
+
+
+class TestEtapa03InicialObjetivoOperadores(unittest.TestCase):
+    def test_estado_inicial_y_objetivo(self):
+        self.assertEqual(P.ESTADO_INICIAL, P.Estado(3, 3, 1))
+        self.assertEqual(P.ESTADO_OBJETIVO, P.Estado(0, 0, 0))
+
+    def test_cinco_operadores(self):
+        self.assertEqual(len(P.ACCIONES), 5)
+        self.assertEqual(set(P.ACCIONES), {(1, 0), (2, 0), (0, 1), (0, 2), (1, 1)})
+
+    def test_costo_de_cada_cruce(self):
+        self.assertEqual(P.COSTO_CRUCE, 1)
