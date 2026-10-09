@@ -171,3 +171,17 @@ def todos_los_estados() -> list[Estado]:
 
 def estados_validos() -> list[Estado]:
     return [e for e in todos_los_estados() if es_valido(e)]
+
+
+
+# ---------------------------------------------------------------------------
+# Heurísticas para A*
+# ---------------------------------------------------------------------------
+
+def h_personas(estado: Estado) -> int:
+    """Heurística sugerida en el README: personas que faltan por cruzar (M + C).
+
+    Es informativa pero NO es admisible en general: en (1, 1, 1) vale 2 y basta
+    un solo cruce. Se conserva para comparación.
+    """
+    return estado.m + estado.c

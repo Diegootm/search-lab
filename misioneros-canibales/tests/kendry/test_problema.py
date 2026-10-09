@@ -231,3 +231,16 @@ class TestEtapa10EspacioDeEstados(unittest.TestCase):
         alcanzables = estados_alcanzables()
         self.assertEqual(len(alcanzables), 16)
         self.assertTrue(alcanzables <= set(P.estados_validos()))
+
+
+
+class TestEtapa11HeuristicaPersonas(unittest.TestCase):
+    def test_valores(self):
+        self.assertEqual(P.h_personas(P.ESTADO_OBJETIVO), 0)
+        self.assertEqual(P.h_personas(P.ESTADO_INICIAL), 6)
+        self.assertEqual(P.h_personas(P.Estado(1, 1, 1)), 2)
+
+    def test_no_es_admisible(self):
+        # Desde (1, 1, 1) basta un cruce (1M 1C), pero la heurística dice 2.
+        self.assertTrue(P.es_objetivo(P.aplicar(P.Estado(1, 1, 1), (1, 1))))
+        self.assertGreater(P.h_personas(P.Estado(1, 1, 1)), 1)
