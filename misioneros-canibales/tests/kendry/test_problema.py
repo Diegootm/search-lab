@@ -153,3 +153,14 @@ class TestEtapa06Validez(unittest.TestCase):
         self.assertFalse(P.es_valido(P.Estado(4, 3, 1)))
         self.assertFalse(P.es_valido(P.Estado(-1, 0, 0)))
         self.assertIn("suficientes", P.motivo_invalidez(P.Estado(0, -1, 1)))
+
+
+
+class TestEtapa07TestObjetivo(unittest.TestCase):
+    def test_objetivo(self):
+        self.assertTrue(P.es_objetivo(P.Estado(0, 0, 0)))
+
+    def test_no_objetivo(self):
+        self.assertFalse(P.es_objetivo(P.Estado(0, 0, 1)))  # el bote quedó a la izquierda
+        self.assertFalse(P.es_objetivo(P.ESTADO_INICIAL))
+        self.assertFalse(P.es_objetivo(P.Estado(1, 1, 0)))
