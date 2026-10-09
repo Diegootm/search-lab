@@ -187,3 +187,27 @@ class TestEtapa08AplicarOperadores(unittest.TestCase):
         self.assertFalse(P.accion_permitida((3, 0)))
 
 
+
+class TestEtapa09FuncionSucesor(unittest.TestCase):
+    def test_se_aplican_los_cinco_operadores(self):
+        self.assertEqual(len(P.todos_los_sucesores(P.ESTADO_INICIAL)), 5)
+
+    def test_sucesores_del_estado_inicial(self):
+        self.assertEqual(dict(P.sucesores(P.ESTADO_INICIAL)),
+                         {(0, 1): P.Estado(3, 2, 0), (0, 2): P.Estado(3, 1, 0),
+                          (1, 1): P.Estado(2, 2, 0)})
+
+    def test_movimientos_invalidos_del_estado_inicial(self):
+        invalidos = [a for a, _e, motivo in P.todos_los_sucesores(P.ESTADO_INICIAL) if motivo]
+        self.assertEqual(invalidos, [(1, 0), (2, 0)])
+
+    def test_los_sucesores_siempre_son_validos(self):
+        for estado in estados_alcanzables():
+            for _accion, nuevo in P.sucesores(estado):
+                self.assertTrue(P.es_valido(nuevo))
+                self.assertNotEqual(estado.b, nuevo.b)  # el bote siempre cruza
+
+    def test_movimientos_reversibles(self):
+        for estado in estados_alcanzables():
+            for accion, nuevo in P.sucesores(estado):
+                self.assertEqual(P.aplicar(nuevo, accion), estado)
