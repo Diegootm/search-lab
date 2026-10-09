@@ -1,0 +1,80 @@
+"""Pruebas de la parte de Gabriel: interfaz Pygame (interfaz.py y main.py).
+
+Cada clase TestEtapaXX corresponde a una etapa de CODIGO_POR_ETAPAS.md.
+Se ejecutan sin abrir ventanas (SDL_VIDEODRIVER=dummy). Desde misioneros-canibales:
+
+    python -m unittest discover -s tests/gabriel -v              (todas)
+    python -m unittest discover -s tests/gabriel -k Etapa05 -v   (solo una etapa)
+"""
+
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+
+os.environ["SDL_VIDEODRIVER"] = "dummy"          # sin ventana real
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
+
+CARPETA = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, CARPETA)
+# Mientras Kendry y Greco terminan, problema/busqueda/metricas se toman de la copia
+# temporal _referencia/ (ver GUIA_GIT.md). Si existe el archivo real, se usa el real.
+sys.path.append(os.path.join(CARPETA, "_referencia"))
+
+import pygame  # noqa: E402
+
+import problema as P  # noqa: E402
+import interfaz as I  # noqa: E402
+
+pygame.display.init()
+pygame.font.init()
+PANTALLA = pygame.display.set_mode((I.ANCHO, I.ALTO))
+
+
+def nueva_app():
+    return I.App(PANTALLA)
+
+
+def pulsar(app, tecla):
+    """Simula que se pulsa una tecla."""
+    app.manejar_evento(pygame.event.Event(pygame.KEYDOWN, key=tecla))
+
+
+def clic_en_boton(prueba, app, etiqueta):
+    """Simula un clic sobre el botón que tiene ese texto."""
+    for boton in app.botones_activos():
+        texto = boton.etiqueta() if callable(boton.etiqueta) else boton.etiqueta
+        if texto == etiqueta:
+            app.manejar_evento(pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1,
+                                                  pos=boton.rect.center))
+            return
+    prueba.fail(f"no existe el botón {etiqueta!r} en el modo {app.modo}")
+
+
+def correr(app, segundos, dt=1 / 30):
+    """Simula el paso del tiempo llamando a actualizar(), como hace el bucle principal."""
+    for _ in range(int(segundos / dt)):
+        app.actualizar(dt)
+
+
+class TestEtapa01Estructura(unittest.TestCase):
+    def test_interfaz_es_el_archivo_propio(self):
+        self.assertEqual(os.path.dirname(os.path.abspath(I.__file__)), CARPETA)
+
+    def test_tamano_de_ventana(self):
+        self.assertEqual((I.ANCHO, I.ALTO), (1280, 800))
+        self.assertEqual(I.FPS, 60)
+
+    def test_colores_y_textos(self):
+        for clave in ("fondo", "agua", "misionero", "canibal", "acento", "astar"):
+            self.assertIn(clave, I.COL)
+        self.assertEqual(len(I.COLOR_TIPO), 4)
+        self.assertEqual(set(I.DESCRIPCION), {"bfs", "astar"})
+        self.assertEqual(set(I.NOMBRE_H), set(P.HEURISTICAS))
+
+    def test_archivos_del_proyecto(self):
+        with open(os.path.join(CARPETA, "requirements.txt"), encoding="utf-8") as archivo:
+            self.assertIn("pygame", archivo.read())
+        with open(os.path.join(CARPETA, ".gitignore"), encoding="utf-8") as archivo:
+            self.assertIn("__pycache__/", archivo.read())
