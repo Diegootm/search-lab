@@ -78,3 +78,34 @@ class TestEtapa01Estructura(unittest.TestCase):
             self.assertIn("pygame", archivo.read())
         with open(os.path.join(CARPETA, ".gitignore"), encoding="utf-8") as archivo:
             self.assertIn("__pycache__/", archivo.read())
+
+
+class TestEtapa02Utilidades(unittest.TestCase):
+    def test_compacto(self):
+        self.assertEqual(I.compacto(P.Estado(3, 1, 0)), "(3,1,0)")
+
+    def test_personas_en_singular_y_plural(self):
+        self.assertEqual(I.personas(1, 1), "1 misionero, 1 caníbal")
+        self.assertEqual(I.personas(3, 0), "3 misioneros, 0 caníbales")
+
+    def test_suavizar(self):
+        self.assertEqual(I.suavizar(0), 0)
+        self.assertEqual(I.suavizar(1), 1)
+        self.assertEqual(I.suavizar(0.5), 0.5)
+        self.assertEqual(I.suavizar(-3), 0)
+        self.assertEqual(I.suavizar(7), 1)
+
+    def test_ruta_base(self):
+        self.assertEqual(I.ruta_base(), CARPETA)
+
+    def test_textos_y_paneles(self):
+        superficie = pygame.Surface((400, 200))
+        fuentes = I.Fuentes()
+        rect = I.texto(superficie, "Hola", fuentes.normal, (0, 0, 0), (10, 10))
+        self.assertEqual(rect.topleft, (10, 10))
+        x_final = I.texto_segmentos(superficie, [("A", fuentes.peq, (0, 0, 0)),
+                                                 ("B", fuentes.peq, (0, 0, 0))], (5, 5))
+        self.assertGreater(x_final, 5)
+        rect = I.panel(superficie, (10, 10, 100, 50), fuentes, "Título")
+        self.assertEqual(rect, pygame.Rect(10, 10, 100, 50))
+        self.assertEqual(superficie.get_at((50, 55))[:3], I.COL["panel"])

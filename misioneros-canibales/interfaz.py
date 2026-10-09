@@ -55,3 +55,75 @@ DESCRIPCION = {
               "g = cruces hechos, h = estimación."],
 }
 NOMBRE_H = {"cruces": "cruces mínimos (admisible)", "personas": "personas M+C (README)"}
+
+
+def ruta_base() -> str:
+    if getattr(sys, "frozen", False):  # ejecutable generado con PyInstaller
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+def personas(m: int, c: int) -> str:
+    return (f"{m} misionero{'' if m == 1 else 's'}, "
+            f"{c} caníbal{'' if c == 1 else 'es'}")
+
+
+def compacto(e: Estado) -> str:
+    return f"({e.m},{e.c},{e.b})"
+
+
+def suavizar(t: float) -> float:
+    t = max(0.0, min(1.0, t))
+    return t * t * (3 - 2 * t)
+
+
+# ---------------------------------------------------------------------------
+# Utilidades de dibujo
+# ---------------------------------------------------------------------------
+
+class Fuentes:
+    def __init__(self) -> None:
+        nombres = "segoeui,arial,dejavusans,liberationsans,freesans"
+        normal = pygame.font.match_font(nombres)
+        negrita = pygame.font.match_font(nombres, bold=True)
+
+        def f(tam: int, bold: bool = False) -> pygame.font.Font:
+            ruta = negrita if bold else normal
+            fuente = pygame.font.Font(ruta, tam)
+            if bold and ruta in (None, normal):
+                fuente.set_bold(True)
+            return fuente
+
+        self.titulo = f(24, True)
+        self.grande = f(34, True)
+        self.h2 = f(17, True)
+        self.normal = f(16)
+        self.negrita = f(15, True)
+        self.peq = f(14)
+        self.peq_b = f(14, True)
+        self.mini = f(12)
+
+
+def texto(surf, s, fuente, color, pos, ancla="topleft") -> pygame.Rect:
+    img = fuente.render(str(s), True, color)
+    r = img.get_rect(**{ancla: (int(pos[0]), int(pos[1]))})
+    surf.blit(img, r)
+    return r
+
+
+def texto_segmentos(surf, segmentos, pos) -> int:
+    """Dibuja [(texto, fuente, color), ...] en una misma línea. Devuelve x final."""
+    x, y = pos
+    for s, fuente, color in segmentos:
+        r = texto(surf, s, fuente, color, (x, y))
+        x = r.right
+    return x
+
+
+def panel(surf, rect, fuentes=None, titulo=None) -> pygame.Rect:
+    rect = pygame.Rect(rect)
+    pygame.draw.rect(surf, COL["panel"], rect, border_radius=10)
+    pygame.draw.rect(surf, COL["borde"], rect, 1, border_radius=10)
+    if titulo and fuentes:
+        texto(surf, titulo, fuentes.h2, COL["texto"], (rect.x + 14, rect.y + 10))
+    return rect
