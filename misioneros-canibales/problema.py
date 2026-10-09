@@ -160,3 +160,14 @@ def todos_los_sucesores(estado: Estado) -> list[tuple[tuple[int, int], Estado, s
 def sucesores(estado: Estado) -> list[tuple[tuple[int, int], Estado]]:
     """Función sucesor: pares (acción, estado resultante) válidos."""
     return [(a, s) for a, s, motivo in todos_los_sucesores(estado) if motivo is None]
+
+
+
+def todos_los_estados() -> list[Estado]:
+    """Conjunto completo de estados posibles (válidos e inválidos): 4·4·2 = 32."""
+    return [Estado(m, c, b) for m in range(N_MISIONEROS + 1)
+            for c in range(N_CANIBALES + 1) for b in (IZQUIERDA, DERECHA)]
+
+
+def estados_validos() -> list[Estado]:
+    return [e for e in todos_los_estados() if es_valido(e)]
