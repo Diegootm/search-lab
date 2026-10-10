@@ -726,3 +726,182 @@ class App:
             self.toast[1] -= dt
             if self.toast[1] <= 0:
                 self.toast = None
+
+    # ---------------------------------------------------------------- dibujo
+    def dibujar(self) -> None:
+        s = self.pantalla
+        s.fill(COL["fondo"])
+        pygame.draw.rect(s, COL["barra"], (0, 0, ANCHO, 56))
+        texto(s, "Misioneros y Caníbales", self.f.titulo, (255, 255, 255), (20, 6))
+        texto(s, "Búsqueda en Anchura (BFS) vs A*  ·  Inteligencia Artificial UMSS 2026",
+              self.f.mini, (148, 163, 184), (22, 36))
+        getattr(self, f"dibujar_{self.modo}")()
+        mouse = pygame.mouse.get_pos()
+        for b in self.botones_activos():
+            fuente = self.f.negrita if b in self.botones["superior"] else self.f.peq_b
+            b.dibujar(s, fuente, mouse)
+        if self.toast:
+            img = self.f.negrita.render(self.toast[0], True, (255, 255, 255))
+            r = img.get_rect(midbottom=(ANCHO // 2, ALTO - 16))
+            pygame.draw.rect(s, (15, 23, 42), r.inflate(28, 16), border_radius=10)
+            s.blit(img, r)
+
+    # -- tarjetas comunes
+    def dibujar_metodologia(self) -> None:
+        r = panel(self.pantalla, (880, 70, 380, 190), self.f, "Metodología de búsqueda")
+        color = COL["acento"] if self.algoritmo == "bfs" else COL["astar"]
+        y = r.y + 116
+        texto(self.pantalla, self.nombre_algoritmo(), self.f.negrita, color, (r.x + 15, y))
+        for i, linea in enumerate(DESCRIPCION[self.algoritmo]):
+            texto(self.pantalla, linea, self.f.peq, COL["suave"], (r.x + 15, y + 20 + i * 17))
+
+    def dibujar_estado(self, rect, estado: Estado, paso_txt: str, mov_txt: str) -> None:
+        s = self.pantalla
+        r = panel(s, rect, self.f, "Estado actual  (M, C, B)")
+        texto(s, str(estado), self.f.grande, COL["texto"], (r.centerx, r.y + 36), "midtop")
+        m_der, c_der = estado.derecha
+        filas = [
+            ("Orilla izquierda:", personas(estado.m, estado.c)),
+            ("Orilla derecha:", personas(m_der, c_der)),
+            ("Bote:", "orilla izquierda" if estado.b == P.IZQUIERDA else "orilla derecha"),
+            ("Paso:", paso_txt),
+            ("Movimiento:", mov_txt),
+            ("Test objetivo:", "Sí, estado objetivo" if P.es_objetivo(estado) else "No"),
+        ]
+        for i, (k, v) in enumerate(filas):
+            y = r.y + 86 + i * 20
+            texto(s, k, self.f.peq_b, COL["suave"], (r.x + 15, y))
+            color = COL["ok"] if k == "Test objetivo:" and P.es_objetivo(estado) else COL["texto"]
+            texto(s, v, self.f.peq, color, (r.x + 125, y))
+
+    # -- simulación
+    def dibujar_sim(self) -> None:
+        s = self.pantalla
+        ruta = self.ruta()
+        estado = self.estado_sim()
+        etiqueta = None
+        if self.anim:
+            etiqueta = P.describir_movimiento(ruta[self.paso + 1].accion, ruta[self.paso].estado)
+        elif self.resuelto and self.paso > 0:
+            nodo = ruta[self.paso]
+            etiqueta = f"Paso {self.paso}: {P.describir_movimiento(nodo.accion, nodo.padre.estado)}"
+        badge = "BFS" if self.algoritmo == "bfs" else "A*"
+        dibujar_escena(s, self.ESCENA, estado, self.f, self.anim, etiqueta, badge)
+        if self.resuelto:
+            txt = f"Paso {self.paso} de {self.n_pasos()}"
+        else:
+            txt = "Pulsa «Resolver»"
+        texto(s, txt, self.f.negrita, COL["texto"], (855, 433), "midright")
+
+        self.dibujar_metodologia()
+        if self.anim:
+            mov = P.nombre_accion(ruta[self.paso + 1].accion) + " (cruzando...)"
+        elif self.resuelto and self.paso > 0:
+            nodo = ruta[self.paso]
+            dirc = "izq → der" if nodo.padre.estado.b == P.IZQUIERDA else "der → izq"
+            mov = f"{P.nombre_accion(nodo.accion)}  ({dirc})"
+        else:
+            mov = "— (estado inicial)"
+        paso_txt = f"{self.paso} / {self.n_pasos()}" if self.resuelto else "—"
+        self.dibujar_estado((880, 270, 380, 215), estado, paso_txt, mov)
+
+        r = panel(s, (880, 495, 380, 295), self.f, "Métricas de la búsqueda")
+        if not self.resuelto:
+            texto(s, "Aún no se ejecutó la búsqueda.", self.f.peq, COL["suave"], (r.x + 15, r.y + 44))
+        else:
+            for i, (k, v) in enumerate(tabla_metricas(self.resultado())):
+                y = r.y + 40 + i * 22
+                if i % 2 == 0:
+                    pygame.draw.rect(s, (248, 250, 252), (r.x + 8, y - 2, r.w - 16, 22))
+                texto(s, k, self.f.peq, COL["texto"], (r.x + 15, y))
+                texto(s, v, self.f.peq_b, COL["texto"], (r.right - 15, y), "topright")
+
+        self.dibujar_panel_ruta()
+        self.dibujar_panel_proceso()
+
+    def dibujar_panel_ruta(self) -> None:
+        s = self.pantalla
+        r = panel(s, self.PANEL_RUTA, self.f, "Ruta solución")
+        if not self.resuelto:
+            texto(s, "Sin resolver.", self.f.peq, COL["suave"], (r.x + 15, r.y + 44))
+            return
+        res = self.resultado()
+        texto(s, f"{res.longitud} cruces · costo {res.costo}", self.f.peq, COL["suave"],
+              (r.right - 14, r.y + 13), "topright")
+        for i, nodo in enumerate(res.ruta):
+            y = r.y + 44 + i * 21
+            if i == self.paso:
+                pygame.draw.rect(s, (219, 234, 254), (r.x + 8, y - 2, r.w - 16, 21), border_radius=5)
+            color = COL["texto"] if i <= self.paso else COL["suave"]
+            texto(s, f"{i:>2}", self.f.peq_b, color, (r.x + 30, y), "topright")
+            texto(s, compacto(nodo.estado), self.f.peq_b, color, (r.x + 42, y))
+            if nodo.padre is None:
+                texto(s, "estado inicial", self.f.peq, color, (r.x + 120, y))
+            else:
+                dirc = "izq → der" if nodo.padre.estado.b == P.IZQUIERDA else "der → izq"
+                texto(s, P.nombre_accion(nodo.accion), self.f.peq, color, (r.x + 120, y))
+                texto(s, dirc, self.f.peq, color, (r.x + 190, y))
+            if P.es_objetivo(nodo.estado):
+                texto(s, "META", self.f.peq_b, COL["ok"], (r.right - 16, y), "topright")
+
+    def dibujar_panel_proceso(self) -> None:
+        s = self.pantalla
+        r = panel(s, self.PANEL_PROCESO, self.f, "Proceso de búsqueda")
+        x = r.right - 14
+        for tipo in (OBJETIVO, INVALIDO, REPETIDO, NUEVO):
+            img = self.f.mini.render(NOMBRE_TIPO[tipo], True, COLOR_TIPO[tipo])
+            x -= img.get_width()
+            s.blit(img, (x, r.y + 15))
+            x -= 10
+        if not self.resuelto:
+            texto(s, "Sin resolver.", self.f.peq, COL["suave"], (r.x + 15, r.y + 44))
+            return
+        res = self.resultado()
+        lineas = self.lineas_proceso(res)
+        area = pygame.Rect(r.x + 8, r.y + 40, r.w - 16, r.h - 48)
+        alto_total = len(lineas) * 19
+        self.scroll_proceso = min(self.scroll_proceso, max(0, alto_total - area.h))
+        clip = s.get_clip()
+        s.set_clip(area)
+        for i, segs in enumerate(lineas):
+            y = area.y + i * 19 - self.scroll_proceso
+            if area.y - 19 < y < area.bottom:
+                texto_segmentos(s, segs, (area.x + 6, y))
+        s.set_clip(clip)
+        if alto_total > area.h:
+            barra_h = max(20, area.h * area.h // alto_total)
+            barra_y = area.y + (area.h - barra_h) * self.scroll_proceso // max(1, alto_total - area.h)
+            pygame.draw.rect(s, COL["borde"], (r.right - 8, barra_y, 4, barra_h), border_radius=2)
+
+    def lineas_proceso(self, res: ResultadoBusqueda) -> list:
+        f = self.f
+        es_a = res.algoritmo.startswith("A*")
+        lineas = []
+        for paso in res.traza:
+            n = paso.nodo
+            valores = f"g={n.g} h={n.h} f={n.f}" if es_a else f"g={n.g}"
+            if paso.es_meta:
+                lineas.append([(f"#{paso.numero} ", f.peq_b, COL["meta"]),
+                               (f"Selecciona {compacto(n.estado)} {valores} → OBJETIVO", f.peq_b,
+                                COL["meta"])])
+                lineas.append([("    test objetivo al extraer de la frontera", f.mini, COL["suave"])])
+                continue
+            lineas.append([(f"#{paso.numero} ", f.peq_b, COL["acento"]),
+                           (f"Expande {compacto(n.estado)}  ", f.peq_b, COL["texto"]),
+                           (valores, f.peq, COL["suave"])])
+            segs = [("    ", f.peq, COL["texto"])]
+            invalidos = 0
+            for suc in paso.sucesores:
+                if suc.tipo == INVALIDO:
+                    invalidos += 1
+                    continue
+                segs.append((f"{P.nombre_accion(suc.accion)}→{compacto(suc.estado)}  ", f.peq,
+                             COLOR_TIPO[suc.tipo]))
+            if invalidos:
+                segs.append((f"+{invalidos} inválidos", f.peq, COL["error"]))
+            lineas.append(segs)
+            frontera = " ".join(compacto(e) for e, _g, _h in paso.frontera) or "vacía"
+            if len(frontera) > 52:
+                frontera = frontera[:50] + "…"
+            lineas.append([("    Frontera: ", f.mini, COL["suave"]), (frontera, f.mini, COL["suave"])])
+        return lineas

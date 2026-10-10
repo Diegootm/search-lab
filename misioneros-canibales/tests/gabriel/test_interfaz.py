@@ -406,3 +406,41 @@ class TestEtapa09BotonesYEventos(unittest.TestCase):
     def test_salir(self):
         self.app.manejar_evento(pygame.event.Event(pygame.QUIT))
         self.assertFalse(self.app.corriendo)
+
+
+class TestEtapa10DibujoSimulacion(unittest.TestCase):
+    def setUp(self):
+        self.app = nueva_app()
+
+    def test_dibujar_antes_de_resolver(self):
+        self.app.dibujar()
+        self.assertEqual(PANTALLA.get_at((5, 5))[:3], I.COL["barra"])
+
+    def test_dibujar_toda_la_simulacion(self):
+        app = self.app
+        app.resolver()
+        app.dibujar()
+        app.avanzar()
+        app.anim["t"] = 0.5
+        app.dibujar()
+        app.terminar_anim()
+        app.ir_final()
+        app.dibujar()
+        app.seleccionar_algoritmo("astar")
+        app.resolver()
+        app.ir_final()
+        app.dibujar()
+
+    def test_lineas_del_proceso(self):
+        lineas = self.app.lineas_proceso(self.app.resultado("bfs"))
+        self.assertGreaterEqual(len(lineas), 13 * 3)
+        self.assertEqual(lineas[0][0][0], "#1 ")
+        lineas = self.app.lineas_proceso(self.app.resultado("astar"))
+        textos = [texto for linea in lineas for texto, _f, _c in linea]
+        self.assertTrue(any("OBJETIVO" in t for t in textos))
+
+    def test_el_desplazamiento_no_se_pasa(self):
+        self.app.resolver()
+        self.app.scroll_proceso = 100000
+        self.app.dibujar()
+        self.assertLess(self.app.scroll_proceso, 100000)
