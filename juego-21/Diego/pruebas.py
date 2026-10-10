@@ -36,7 +36,47 @@ class PruebasJuego21(unittest.TestCase):
         self.assertEqual(acciones_disponibles(Estado(), 3), ("Tirar",))
         estado = registrar_resultado(Estado(), 7, 1)
         self.assertEqual(estado.turno, 2)
-        self.assertEqual(plantarse(estado).turno, 0)
+        estado = registrar_resultado(estado, 8, 1)
+        self.assertEqual(estado.turno, 0)
+
+    def test_turnos_intercalados(self):
+        estado = Estado()
+        turnos = []
+        for valor in (7, 8, 9, 10, 11, 12):
+            turnos.append(estado.turno)
+            estado = registrar_resultado(estado, valor, 3)
+        self.assertEqual(turnos, [1, 2, 1, 2, 1, 2])
+        self.assertEqual(estado.turno, 0)
+        self.assertEqual((estado.tiros_j1, estado.tiros_j2), (3, 3))
+        self.assertEqual((estado.suma_j1, estado.suma_j2), (11, 12))
+
+    def test_plantado_no_vuelve_a_jugar(self):
+        estado = registrar_resultado(Estado(), 7, 3)
+        estado = registrar_resultado(estado, 8, 3)
+        estado = plantarse(estado)
+        self.assertEqual(estado.turno, 2)
+        estado = registrar_resultado(estado, 9, 3)
+        self.assertEqual(estado.turno, 2)
+        estado = registrar_resultado(estado, 10, 3)
+        self.assertEqual(estado.turno, 0)
+        self.assertEqual(estado.tiros_j1, 1)
+
+    def test_j2_se_planta_y_j1_continua(self):
+        estado = registrar_resultado(Estado(), 7, 3)
+        estado = registrar_resultado(estado, 8, 3)
+        estado = registrar_resultado(estado, 9, 3)
+        estado = plantarse(estado)
+        self.assertEqual(estado.turno, 1)
+        estado = registrar_resultado(estado, 10, 3)
+        self.assertEqual(estado.turno, 0)
+
+    def test_no_plantarse_antes_del_primer_tiro(self):
+        with self.assertRaises(ValueError):
+            plantarse(Estado())
+
+    def test_no_lanzar_despues_del_final(self):
+        with self.assertRaises(ValueError):
+            registrar_resultado(Estado(turno=0), 7, 3)
 
     def test_algoritmos_misma_decision(self):
         generador = random.Random(2026)

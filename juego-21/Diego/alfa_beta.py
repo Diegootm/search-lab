@@ -12,12 +12,14 @@ from motor import (
 
 class BuscadorAlfaBeta:
     def __init__(self, max_tiros: int):
+        """Prepara los datos y recursos que necesita este objeto."""
         self.max_tiros = max_tiros
         self.estadisticas = Estadisticas()
         self.valores_exacto: dict[Estado, float] = {}
 
     def evaluar_estado(self, estado: Estado, alfa: float = -inf,
                        beta: float = inf) -> float:
+        """Reutiliza estados conocidos y busca lo mejor para el jugador que tiene el turno."""
         if estado in self.valores_exacto:
             self.estadisticas.cache += 1
             return self.valores_exacto[estado]
@@ -30,6 +32,7 @@ class BuscadorAlfaBeta:
             return valor
 
         opciones = acciones_disponibles(estado, self.max_tiros)
+        # Solo guarda valores exactos; una rama podada devuelve un limite.
         ventana_completa = alfa <= -1.0 and beta >= 1.0
 
         if estado.turno == 1:
@@ -63,6 +66,7 @@ class BuscadorAlfaBeta:
 
     def evaluar_accion(self, estado: Estado, accion: str,
                        alfa: float, beta: float) -> float:
+        """Evalua plantarse o combina los resultados de tirar segun sus probabilidades."""
         if accion == ACCION_PLANTARSE:
             return self.evaluar_estado(plantarse(estado), alfa, beta)
         if accion != ACCION_TIRAR:
@@ -76,6 +80,7 @@ class BuscadorAlfaBeta:
             peso = round(probabilidad * 36)
             peso_restante -= peso
 
+            # Acota al hijo contando que lo pendiente puede valer entre -1 y 1.
             alfa_hijo = (36 * alfa - suma_ponderada - peso_restante) / peso
             beta_hijo = (36 * beta - suma_ponderada + peso_restante) / peso
 
@@ -103,6 +108,7 @@ class BuscadorAlfaBeta:
         return suma_ponderada / 36
 
     def elegir_accion(self, estado: Estado) -> Decision:
+        """Compara las acciones legales y elige la mejor para el jugador actual."""
         if estado.turno == 0:
             raise ValueError("No hay decisiones en un estado terminal")
 

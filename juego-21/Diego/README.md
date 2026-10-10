@@ -37,7 +37,7 @@ Los tiros máximos también se pueden seleccionar desde la pantalla antes de emp
 
 ### Reglas implementadas
 
-- J1 juega hasta plantarse, sacar 2 y 1 o alcanzar el número máximo de tiros. Después juega J2.
+- Los turnos se intercalan: J1, J2, J1, J2. Quien se planta o agota sus tiros deja de participar en la ronda; el otro puede completar los suyos.
 - Ambos están obligados a efectuar un primer lanzamiento. Volver a tirar sustituye la puntuación obtenida en la tirada anterior.
 - Sacar los dados 2 y 1 (en cualquier orden) significa victoria inmediata.
 - Si nadie consigue 2 y 1, gana la puntuación mayor.

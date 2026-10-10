@@ -11,11 +11,13 @@ from motor import (
 
 class BuscadorMinimax:
     def __init__(self, max_tiros: int):
+        """Prepara los datos y recursos que necesita este objeto."""
         self.max_tiros = max_tiros
         self.estadisticas = Estadisticas()
         self.valores_exacto: dict[Estado, float] = {}
 
     def evaluar_estado(self, estado: Estado) -> float:
+        """Reutiliza estados conocidos y busca lo mejor para el jugador que tiene el turno."""
         if estado in self.valores_exacto:
             self.estadisticas.cache += 1
             return self.valores_exacto[estado]
@@ -33,6 +35,7 @@ class BuscadorMinimax:
         return valor
 
     def evaluar_accion(self, estado: Estado, accion: str) -> float:
+        """Evalua plantarse o combina los resultados de tirar segun sus probabilidades."""
         if accion == ACCION_PLANTARSE:
             return self.evaluar_estado(plantarse(estado))
         if accion != ACCION_TIRAR:
@@ -46,6 +49,7 @@ class BuscadorMinimax:
         return esperado
 
     def elegir_accion(self, estado: Estado) -> Decision:
+        """Compara las acciones legales y elige la mejor para el jugador actual."""
         if estado.turno == 0:
             raise ValueError("No hay decisiones en un estado terminal")
 

@@ -48,10 +48,21 @@ PUNTOS = {
 }
 
 
+def centrar_ventana(ventana: tk.Misc, ancho: int, alto: int) -> None:
+    """Calcula la posicion para abrir la ventana en el centro de la pantalla."""
+    ventana.update_idletasks()
+    ancho = min(ancho, ventana.winfo_screenwidth())
+    alto = min(alto, ventana.winfo_screenheight())
+    x = (ventana.winfo_screenwidth() - ancho) // 2
+    y = (ventana.winfo_screenheight() - alto) // 2
+    ventana.geometry(f"{ancho}x{alto}+{x}+{y}")
+
+
 class InterfazJuego:
     """Coordina percepciones, busqueda, animacion y transiciones del motor."""
 
     def __init__(self, ventana: tk.Tk, algoritmo: str, permitir_elegir: bool = False):
+        """Prepara los datos y recursos que necesita este objeto."""
         self.ventana = ventana
         self.algoritmo = algoritmo
         self.permitir_elegir = permitir_elegir
@@ -85,7 +96,7 @@ class InterfazJuego:
         self.aleatorio = random.Random()
 
         self.ventana.title("Juego del 21 | Mesa animada")
-        self.ventana.geometry("1190x830")
+        centrar_ventana(self.ventana, 1190, 830)
         self.ventana.minsize(950, 720)
         self.ventana.configure(bg=FONDO)
         self.variable_tiros = tk.StringVar(value=str(MAX_TIROS))
@@ -99,6 +110,7 @@ class InterfazJuego:
         self.ventana.after(100, self.dibujar_mesa)
 
     def crear_componentes(self) -> None:
+        """Construye los selectores, la mesa y los botones de la partida."""
         cabecera = tk.Frame(self.ventana, bg=FONDO, height=92)
         cabecera.pack(fill="x", padx=28, pady=(17, 8))
         cabecera.pack_propagate(False)
@@ -174,6 +186,7 @@ class InterfazJuego:
     @staticmethod
     def crear_boton(padre: tk.Widget, texto: str, comando,
                     fondo: str, color: str) -> tk.Button:
+        """Crea un boton con el estilo compartido y la accion indicada."""
         return tk.Button(padre, text=texto, command=comando, bg=fondo,
                          fg=color, activebackground=ORO, activeforeground=FONDO,
                          disabledforeground="#6A7679", relief="flat",
@@ -181,42 +194,51 @@ class InterfazJuego:
                          cursor="hand2", borderwidth=0)
 
     def redibujar_al_redimensionar(self, _evento=None) -> None:
+        """Actualiza el dibujo cuando cambia el tamaño de la ventana."""
         if hasattr(self, "lienzo"):
             self.dibujar_mesa()
 
     def punto(self, x: float, y: float) -> tuple[float, float]:
+        """Adapta una posicion de la mesa al tamaño actual del lienzo."""
         return self.origen_x + x * self.escala, self.origen_y + y * self.escala
 
     def caja(self, x1: float, y1: float, x2: float, y2: float) -> tuple:
+        """Adapta las dos esquinas de una figura al lienzo."""
         return (*self.punto(x1, y1), *self.punto(x2, y2))
 
     def elipse(self, x1, y1, x2, y2, color, borde="", ancho=1) -> None:
+        """Dibuja un ovalo con las medidas y colores indicados."""
         self.lienzo.create_oval(*self.caja(x1, y1, x2, y2), fill=color,
                                 outline=borde, width=ancho * self.escala)
 
     def linea(self, puntos, color, ancho=2, suavizar=False) -> None:
+        """Une los puntos indicados y ajusta el grosor a la escala."""
         coordenadas = [coordenada for x, y in puntos for coordenada in self.punto(x, y)]
         self.lienzo.create_line(*coordenadas, fill=color,
                                 width=ancho * self.escala,
                                 smooth=suavizar, capstyle="round")
 
     def poligono(self, puntos, color, borde="") -> None:
+        """Dibuja una figura cerrada a partir de sus vertices."""
         coordenadas = [coordenada for x, y in puntos for coordenada in self.punto(x, y)]
         self.lienzo.create_polygon(*coordenadas, fill=color, outline=borde,
                                    smooth=False)
 
     def texto(self, x, y, texto, tamano, color, negrita=False,
               ancla="center") -> None:
+        """Coloca un texto y adapta su tamaño a la escala de la mesa."""
         self.lienzo.create_text(*self.punto(x, y), text=texto, fill=color,
                                 font=("Arial", max(7, int(tamano * self.escala)),
                                       "bold" if negrita else "normal"),
                                 anchor=ancla)
 
     def rectangulo(self, x1, y1, x2, y2, color, borde="", ancho=1) -> None:
+        """Dibuja un rectangulo adaptado al tamaño de la mesa."""
         self.lienzo.create_rectangle(*self.caja(x1, y1, x2, y2), fill=color,
                                      outline=borde, width=ancho * self.escala)
 
     def dibujar_tablero(self) -> None:
+        """Dibuja la mesa y los datos de la ronda."""
         self.rectangulo(0, 0, ANCHO, ALTO, "#182820")
         for i in range(13):
             y = 28 + i * 48
@@ -239,13 +261,13 @@ class InterfazJuego:
                    13, ORO, True)
 
     def dibujar_jugador(self, numero: int, x: int) -> None:
+        """Muestra los puntos, tiros y situacion de un jugador."""
         activo = self.estado.turno == numero and not self.terminado
         if self.animando:
             activo = self.jugador_lanzando == numero
         suma = self.estado.suma_j1 if numero == 1 else self.estado.suma_j2
         tiros = self.estado.tiros_j1 if numero == 1 else self.estado.tiros_j2
         color_borde = ORO if activo else "#2D7960"
-        fondo_tarjeta = "#153C34" if activo else "#174132"
         self.elipse(x - 117, 171, x + 117, 440, "#0A3F31", color_borde, 3)
         self.texto(x, 212, f"JUGADOR {numero}", 15,
                    ORO if activo else "#DAE4D5", True)
@@ -254,13 +276,15 @@ class InterfazJuego:
         self.texto(x, 388, f"TIROS: {tiros} / {self.max_tiros}", 13,
                    VERDE if activo else "#C2D0C4", True)
         estado = "LANZANDO..." if self.animando and self.jugador_lanzando == numero else (
-            "SU TURNO" if activo else "EN ESPERA")
+            "SU TURNO" if activo else ("PLANTADO" if (self.estado.terminado_j1 if numero == 1
+                               else self.estado.terminado_j2) else "EN ESPERA"))
         if self.terminado:
             estado = "GANADOR" if ganador(self.estado) == numero else "FINALIZADO"
         self.texto(x, 463, estado, 12, ORO if activo else "#C3D4C8", True)
 
     def dibujar_cubilete(self, x: float, y: float, inclinacion: float = 0.0,
                          elevacion: float = 0.0) -> None:
+        """Dibuja el cubilete con la inclinacion y altura de la animacion."""
         y -= elevacion
         i = inclinacion
         self.elipse(x - 70, y + 64, x + 70, y + 84, "#0B3A2B")
@@ -279,7 +303,9 @@ class InterfazJuego:
 
     def dibujar_dado(self, x: float, y: float, valor: int,
                      angulo: float = 0.0, tamano: float = 75) -> None:
+        """Dibuja un dado girado con los puntos de su valor."""
         def giro(dx: float, dy: float) -> tuple[float, float]:
+            """Gira una posicion alrededor del centro del dado."""
             r = math.radians(angulo)
             return x + dx * math.cos(r) - dy * math.sin(r), \
                 y + dx * math.sin(r) + dy * math.cos(r)
@@ -304,6 +330,7 @@ class InterfazJuego:
                         punto_x + radio, punto_y + radio, "#1C2524")
 
     def dibujar_dados(self) -> None:
+        """Muestra los dados en movimiento o la ultima tirada confirmada."""
         if self.animando:
             progreso = self.fotograma / self.total_fotogramas
             if progreso < 0.34:
@@ -328,6 +355,7 @@ class InterfazJuego:
                        "#84B59A", True)
 
     def dibujar_mesa(self) -> None:
+        """Ajusta la escala y vuelve a dibujar la mesa completa."""
         if not hasattr(self, "lienzo") or not self.lienzo.winfo_exists():
             return
         ancho = max(1, self.lienzo.winfo_width())
@@ -359,6 +387,7 @@ class InterfazJuego:
             self.texto(590, 164, "LANZANDO LOS DADOS...", 16, ORO, True)
 
     def actualizar_controles(self) -> None:
+        """Habilita las acciones humanas validas y actualiza el mensaje y la mesa."""
         humano = (self.activo and not self.animando and not self.terminado and
                   self.estado.turno == JUGADOR_HUMANO)
         opciones = acciones_disponibles(self.estado, self.max_tiros)
@@ -370,6 +399,7 @@ class InterfazJuego:
         self.dibujar_mesa()
 
     def cancelar_eventos(self) -> None:
+        """Cancela las tareas pendientes para evitar acciones despues de reiniciar o cerrar."""
         for nombre in ("evento_turno", "evento_animacion", "evento_resultados"):
             identificador = getattr(self, nombre)
             if identificador is not None:
@@ -380,6 +410,7 @@ class InterfazJuego:
                 setattr(self, nombre, None)
 
     def reiniciar(self) -> None:
+        """Limpia la partida anterior y deja los controles listos para empezar."""
         self.cancelar_eventos()
         if self.ventana_resultados and self.ventana_resultados.winfo_exists():
             self.ventana_resultados.destroy()
@@ -407,6 +438,7 @@ class InterfazJuego:
         self.actualizar_controles()
 
     def alternar(self) -> None:
+        """Inicia, pausa o continua la partida con las opciones seleccionadas."""
         if self.terminado:
             self.reiniciar()
         if self.activo:
@@ -430,17 +462,20 @@ class InterfazJuego:
             self.selector_tiros.configure(state="disabled")
             self.selector_algoritmo.configure(state="disabled")
             self.boton_inicio.configure(text="PAUSAR")
-            self.mensaje = f"Turno del jugador {self.estado.turno}"
+            self.mensaje = (f"Turno del jugador {self.estado.turno}"
+                            if self.estado.turno else "Empate: comienza otra ronda")
             if not self.animando:
                 self.programar_turno(350)
         self.actualizar_controles()
 
     def programar_turno(self, espera: int = PAUSA_ENTRE_JUGADAS_MS) -> None:
+        """Programa la siguiente jugada y cancela cualquier turno pendiente anterior."""
         if self.evento_turno is not None:
             self.ventana.after_cancel(self.evento_turno)
         self.evento_turno = self.ventana.after(espera, self.paso_automatico)
 
     def paso_automatico(self) -> None:
+        """Inicia otra ronda, espera al humano o pide una decision a la IA."""
         self.evento_turno = None
         if not self.activo or self.animando or self.terminado:
             return
@@ -468,6 +503,7 @@ class InterfazJuego:
         self.ejecutar_accion(decision.accion)
 
     def accion_humana(self, accion: str) -> None:
+        """Acepta la accion solo si corresponde al humano y esta permitida."""
         if (self.activo and not self.animando and not self.terminado
                 and self.estado.turno == JUGADOR_HUMANO
                 and accion in acciones_disponibles(self.estado, self.max_tiros)):
@@ -475,6 +511,7 @@ class InterfazJuego:
             self.ejecutar_accion(accion)
 
     def ejecutar_accion(self, accion: str) -> None:
+        """Aplica plantarse o prepara la animacion de un lanzamiento."""
         jugador = self.estado.turno
         if accion == ACCION_PLANTARSE:
             self.estado = plantarse(self.estado)
@@ -493,6 +530,7 @@ class InterfazJuego:
             raise ValueError(f"Accion desconocida: {accion}")
 
     def animar_lanzamiento(self) -> None:
+        """Avanza un fotograma y confirma los dados al terminar la animacion."""
         self.evento_animacion = None
         if not self.animando:
             return
@@ -504,6 +542,7 @@ class InterfazJuego:
             self.finalizar_lanzamiento()
 
     def finalizar_lanzamiento(self) -> None:
+        """Guarda los dados reales, actualiza el motor y procesa el cambio de turno."""
         dados = self.resultado_pendiente
         if dados is None:
             return
@@ -520,6 +559,7 @@ class InterfazJuego:
         self.procesar_fin_de_turno()
 
     def procesar_fin_de_turno(self) -> None:
+        """Continua la partida, repite un empate o anuncia al ganador."""
         if self.estado.turno == 0:
             resultado = ganador(self.estado)
             if resultado == 0:
@@ -543,6 +583,7 @@ class InterfazJuego:
             self.programar_turno()
 
     def nueva_ronda(self) -> None:
+        """Reinicia los puntos y tiros despues de un empate."""
         self.estado = Estado()
         self.ronda += 1
         self.ultima_tirada = None
@@ -552,6 +593,7 @@ class InterfazJuego:
         self.actualizar_controles()
 
     def abrir_resultados(self) -> None:
+        """Muestra el ganador, el historial y la comparacion de los algoritmos."""
         self.evento_resultados = None
         if not self.terminado:
             return
@@ -559,7 +601,7 @@ class InterfazJuego:
         ventana = tk.Toplevel(self.ventana)
         self.ventana_resultados = ventana
         ventana.title("Resultado y evaluacion del algoritmo")
-        ventana.geometry("950x700")
+        centrar_ventana(ventana, 950, 700)
         ventana.minsize(840, 630)
         ventana.configure(bg=FONDO)
         ventana.transient(self.ventana)
@@ -626,11 +668,13 @@ class InterfazJuego:
 
     @staticmethod
     def titulo_panel(padre: tk.Widget, texto: str) -> None:
+        """Agrega un titulo a una seccion del analisis."""
         tk.Label(padre, text=texto, bg=PANEL, fg=VERDE,
                  font=("Arial", 11, "bold")).pack(anchor="w", pady=(7, 9))
 
     @staticmethod
     def linea_panel(padre: tk.Widget, etiqueta: str, valor) -> None:
+        """Muestra una etiqueta y su valor en una fila del analisis."""
         fila = tk.Frame(padre, bg=PANEL)
         fila.pack(fill="x", pady=3)
         tk.Label(fila, text=etiqueta, bg=PANEL, fg=APAGADO,
@@ -639,11 +683,13 @@ class InterfazJuego:
                  font=("Arial", 10, "bold")).pack(side="right")
 
     def cerrar(self) -> None:
+        """Cancela las tareas pendientes y cierra la ventana."""
         self.cancelar_eventos()
         self.ventana.destroy()
 
 
 def iniciar_interfaz(algoritmo: str, permitir_elegir: bool = False) -> None:
+    """Crea la ventana con selector de algoritmo y mantiene la interfaz en marcha."""
     ventana = tk.Tk()
     ttk.Style(ventana).theme_use("clam")
     InterfazJuego(ventana, algoritmo, permitir_elegir)

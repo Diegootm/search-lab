@@ -8,6 +8,7 @@ from motor import Estado
 
 
 def comparar(max_tiros: int = 3) -> None:
+    """Ejecuta ambos algoritmos desde el mismo estado y verifica que coincidan."""
     estado = Estado()
     resultados = []
     for nombre, clase in (("Minimax", BuscadorMinimax),
