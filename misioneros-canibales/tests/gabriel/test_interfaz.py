@@ -494,3 +494,40 @@ class TestEtapa12Comparacion(unittest.TestCase):
         self.assertEqual(self.app.heuristica, "personas")
         self.app.dibujar()
         self.assertIn("personas", self.app._tiempos)
+
+
+class TestEtapa13ManualYBucle(unittest.TestCase):
+    def setUp(self):
+        self.app = nueva_app()
+
+    def test_dibujar_modo_manual(self):
+        app = self.app
+        app.cambiar_modo("manual")
+        app.dibujar()
+        app.mover_manual((2, 0))
+        app.dibujar()
+        app.mover_manual((0, 2))
+        app.anim["t"] = 0.5
+        app.dibujar()
+        app.terminar_anim()
+        app.dibujar()
+        self.assertEqual(app.aplicado(0), P.Estado(3, 1, 0))
+
+    def test_resolver_el_juego_completo(self):
+        app = self.app
+        app.cambiar_modo("manual")
+        teclas = {(1, 0): pygame.K_1, (2, 0): pygame.K_2, (0, 1): pygame.K_3,
+                  (0, 2): pygame.K_4, (1, 1): pygame.K_5}
+        for nodo in app.resultado("bfs").ruta[1:]:
+            pulsar(app, teclas[nodo.accion])
+            correr(app, 1.5)
+            self.assertEqual(app.manual_estado, nodo.estado)
+        self.assertTrue(P.es_objetivo(app.manual_estado))
+        self.assertIn("11 cruces", app.manual_msg[0])
+        app.dibujar()
+
+    def test_el_bucle_termina_al_cerrar_la_ventana(self):
+        pygame.event.clear()
+        pygame.event.post(pygame.event.Event(pygame.QUIT))
+        self.app.ejecutar()
+        self.assertFalse(self.app.corriendo)

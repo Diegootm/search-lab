@@ -1165,3 +1165,76 @@ class App:
         ]
         for i, l in enumerate(lineas):
             texto(s, l, self.f.peq, COL["texto"], (r.x + 15, r.y + 38 + i * 21))
+
+    # -- modo manual
+    def dibujar_manual(self) -> None:
+        s = self.pantalla
+        e = self.manual_estado
+        etiqueta = None
+        if self.anim:
+            accion = (abs(self.anim["desde"].m - self.anim["hasta"].m),
+                      abs(self.anim["desde"].c - self.anim["hasta"].c))
+            etiqueta = P.describir_movimiento(accion, self.anim["desde"])
+        dibujar_escena(s, self.ESCENA, e, self.f, self.anim, etiqueta, "Manual")
+
+        r = panel(s, (20, 470, 840, 320), self.f, "Mensaje")
+        msg, color = self.manual_msg
+        texto(s, msg, self.f.negrita, color, (r.x + 15, r.y + 40))
+        y = r.y + 78
+        pygame.draw.line(s, COL["borde"], (r.x + 12, y - 8), (r.right - 12, y - 8))
+        direccion = "izq → der" if e.b == P.IZQUIERDA else "der → izq"
+        texto(s, f"Análisis de los operadores desde {e}  (el bote cruza {direccion})",
+              self.f.h2, COL["texto"], (r.x + 15, y))
+        texto(s, "Operador", self.f.peq_b, COL["suave"], (r.x + 20, y + 30))
+        texto(s, "Tecla", self.f.peq_b, COL["suave"], (r.x + 160, y + 30))
+        texto(s, "Resultado", self.f.peq_b, COL["suave"], (r.x + 220, y + 30))
+        texto(s, "¿Válido?", self.f.peq_b, COL["suave"], (r.x + 330, y + 30))
+        visitados = {estado for estado, _a in self.manual_hist}
+        for i, (accion, nuevo, motivo) in enumerate(P.todos_los_sucesores(e)):
+            yy = y + 56 + i * 26
+            if i % 2 == 0:
+                pygame.draw.rect(s, (248, 250, 252), (r.x + 10, yy - 3, r.w - 20, 26))
+            texto(s, P.describir_movimiento(accion, e).split(" ", 1)[1].split(" (")[0],
+                  self.f.peq, COL["texto"], (r.x + 20, yy))
+            texto(s, str(i + 1), self.f.peq_b, COL["texto"], (r.x + 172, yy))
+            texto(s, str(nuevo), self.f.peq, COL["texto"], (r.x + 220, yy))
+            if P.es_objetivo(e):
+                estado_txt, color = "—", COL["suave"]
+            elif motivo:
+                estado_txt, color = f"No: {motivo}", COL["error"]
+            elif nuevo in visitados:
+                estado_txt, color = "Sí (estado ya visitado: ciclo)", COL["meta"]
+            else:
+                estado_txt, color = "Sí", COL["ok"]
+            texto(s, estado_txt, self.f.peq, color, (r.x + 330, yy))
+
+        n = len(self.manual_hist)
+        self.dibujar_estado((880, 70, 380, 215), e, f"{n} cruce{'' if n == 1 else 's'}",
+                            P.nombre_accion(self.manual_hist[-1][1]) if self.manual_hist else "—")
+        r = panel(s, (880, 295, 380, 440), self.f, "Historial de movimientos")
+        texto(s, f"Inválidos: {self.manual_invalidos}", self.f.peq, COL["error"],
+              (r.right - 14, r.y + 13), "topright")
+        filas = [(P.ESTADO_INICIAL, None)] + [(self.aplicado(i), a) for i, (_e, a) in
+                                              enumerate(self.manual_hist)]
+        visibles = filas[-18:]
+        inicio = len(filas) - len(visibles)
+        for i, (estado, accion) in enumerate(visibles):
+            y = r.y + 42 + i * 21
+            texto(s, f"{inicio + i:>2}", self.f.peq_b, COL["suave"], (r.x + 32, y), "topright")
+            texto(s, compacto(estado), self.f.peq_b, COL["texto"], (r.x + 44, y))
+            mov = "estado inicial" if accion is None else P.nombre_accion(accion)
+            texto(s, mov, self.f.peq, COL["texto"], (r.x + 120, y))
+
+    def aplicado(self, i: int) -> Estado:
+        estado, accion = self.manual_hist[i]
+        return P.aplicar(estado, accion)
+
+    # ---------------------------------------------------------------- bucle
+    def ejecutar(self) -> None:
+        while self.corriendo:
+            dt = self.reloj.tick(FPS) / 1000
+            for ev in pygame.event.get():
+                self.manejar_evento(ev)
+            self.actualizar(dt)
+            self.dibujar()
+            pygame.display.flip()
