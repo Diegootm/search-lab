@@ -201,3 +201,132 @@ def dibujar_persona(surf, x, y, tipo, s=1.0) -> None:
         hx, hy = cuerpo.right + 2 * s, cuerpo.centery
         pygame.draw.line(surf, (245, 245, 235), (hx, hy - 7 * s), (hx, hy + 7 * s), max(2, int(3 * s)))
     pygame.draw.circle(surf, (60, 50, 45), cabeza, r, 1)
+
+
+def dibujar_escena(surf, rect, estado: Estado, fuentes: Fuentes, anim=None,
+                   etiqueta_superior: str | None = None, badge: str | None = None) -> None:
+    """Dibuja el río con ambas orillas. ``anim`` = dict(desde, hasta, t) durante un cruce."""
+    rect = pygame.Rect(rect)
+    x0, y0, w, h = rect
+    anterior_clip = surf.get_clip()
+    surf.set_clip(rect)
+
+    # Cielo degradado
+    for i in range(h):
+        k = i / h
+        c = [int(COL["cielo1"][j] * (1 - k) + COL["cielo2"][j] * k) for j in range(3)]
+        pygame.draw.line(surf, c, (x0, y0 + i), (x0 + w, y0 + i))
+    pygame.draw.circle(surf, (253, 224, 71), (x0 + w - 70, y0 + 45), 26)
+    for cx, cy in ((x0 + 330, y0 + 40), (x0 + 520, y0 + 70)):
+        for dx, dy, rr in ((0, 0, 18), (20, -8, 22), (42, 0, 17)):
+            pygame.draw.circle(surf, (255, 255, 255), (cx + dx, cy + dy), rr)
+
+    banco_w = int(w * 0.27)
+    yb = y0 + int(h * 0.45)            # altura del pasto
+    agua_y = y0 + int(h * 0.64)        # nivel del agua
+    rio_izq, rio_der = x0 + banco_w, x0 + w - banco_w
+
+    # Río
+    pygame.draw.rect(surf, COL["agua"], (rio_izq - 30, yb + 12, rio_der - rio_izq + 60, h))
+    fase = (pygame.time.get_ticks() // 60) % 40
+    for fila in range(4):
+        yy = yb + 35 + fila * 34
+        for xx in range(rio_izq - 20 + (fase + fila * 13) % 40, rio_der + 20, 40):
+            pygame.draw.arc(surf, COL["agua2"], (xx, yy, 22, 10), 0, 3.14, 2)
+
+    # Orillas
+    for lado in (0, 1):
+        if lado == 0:
+            poly = [(x0, yb), (rio_izq, yb), (rio_izq + 22, y0 + h), (x0, y0 + h)]
+            borde = [(rio_izq, yb), (rio_izq + 22, y0 + h)]
+        else:
+            poly = [(rio_der, yb), (x0 + w, yb), (x0 + w, y0 + h), (rio_der - 22, y0 + h)]
+            borde = [(rio_der, yb), (rio_der - 22, y0 + h)]
+        pygame.draw.polygon(surf, COL["pasto"], poly)
+        pygame.draw.line(surf, COL["tierra"], *borde, 8)
+        pygame.draw.line(surf, COL["pasto2"], poly[0], poly[1], 3)
+    for tx in (x0 + 18, x0 + w - 18):  # árboles al fondo
+        pygame.draw.rect(surf, (120, 80, 40), (tx - 4, yb - 40, 8, 42))
+        pygame.draw.circle(surf, (60, 130, 40), (tx, yb - 48), 20)
+
+    # Personas en cada orilla (durante el cruce, quienes van en el bote no están en tierra)
+    if anim:
+        desde, hasta = anim["desde"], anim["hasta"]
+        izq = (min(desde.m, hasta.m), min(desde.c, hasta.c))
+        der = (min(desde.derecha[0], hasta.derecha[0]), min(desde.derecha[1], hasta.derecha[1]))
+        pasajeros = (abs(desde.m - hasta.m), abs(desde.c - hasta.c))
+    else:
+        izq, der, pasajeros = (estado.m, estado.c), estado.derecha, (0, 0)
+
+    sep = 62
+    for lado, (m, c) in ((0, izq), (1, der)):
+        for fila, (n, tipo) in enumerate(((m, "M"), (c, "C"))):
+            pies = yb + 62 + fila * 80
+            for i in range(n):
+                px = x0 + 42 + i * sep if lado == 0 else x0 + w - 42 - i * sep
+                dibujar_persona(surf, px, pies, tipo)
+        cx = x0 + banco_w // 2 if lado == 0 else x0 + w - banco_w // 2
+        nombre = "Orilla izquierda" if lado == 0 else "Orilla derecha"
+        caja = pygame.Rect(0, 0, 170, 42)
+        caja.midbottom = (cx, yb - 6)
+        fondo = pygame.Surface(caja.size, pygame.SRCALPHA)
+        fondo.fill((255, 255, 255, 190))
+        surf.blit(fondo, caja)
+        texto(surf, nombre, fuentes.peq_b, COL["texto"], (cx, caja.y + 3), "midtop")
+        texto_segmentos(surf, [(f"{m} M", fuentes.peq_b, COL["misionero"]),
+                               ("   ", fuentes.peq, COL["texto"]),
+                               (f"{c} C", fuentes.peq_b, COL["canibal"])], (cx - 32, caja.y + 21))
+
+    # Bote
+    bw = 150
+    muelle_izq, muelle_der = rio_izq + 6, rio_der - 6 - bw
+    if anim:
+        x_ini = muelle_izq if anim["desde"].b == P.IZQUIERDA else muelle_der
+        x_fin = muelle_izq if anim["hasta"].b == P.IZQUIERDA else muelle_der
+        bx = x_ini + (x_fin - x_ini) * suavizar(anim["t"])
+    else:
+        bx = muelle_izq if estado.b == P.IZQUIERDA else muelle_der
+    bx = int(bx)
+    by = agua_y - 10
+    asientos = [bx + 50, bx + 100]
+    tipos = ["M"] * pasajeros[0] + ["C"] * pasajeros[1]
+    for asiento, tipo in zip(asientos, tipos):
+        dibujar_persona(surf, asiento, by + 16, tipo, 0.85)
+    casco = [(bx, by), (bx + bw, by), (bx + bw - 18, by + 26), (bx + 18, by + 26)]
+    pygame.draw.polygon(surf, COL["madera2"], casco)
+    pygame.draw.polygon(surf, COL["madera"], casco, 3)
+    pygame.draw.line(surf, COL["madera"], (bx + 10, by + 10), (bx + bw - 10, by + 10), 2)
+    pygame.draw.line(surf, COL["madera"], (bx + bw // 2, by - 30), (bx + bw // 2 + 30, by + 30), 4)  # remo
+    texto(surf, "bote (cap. 2)", fuentes.mini, (255, 255, 255), (bx + bw // 2, by + 13), "center")
+
+    # Leyenda
+    ley = pygame.Rect(x0 + 10, y0 + 10, 210, 34)
+    fondo = pygame.Surface(ley.size, pygame.SRCALPHA)
+    fondo.fill((255, 255, 255, 200))
+    surf.blit(fondo, ley)
+    dibujar_persona(surf, ley.x + 16, ley.bottom - 2, "M", 0.55)
+    texto(surf, "Misionero", fuentes.peq, COL["texto"], (ley.x + 30, ley.y + 8))
+    dibujar_persona(surf, ley.x + 118, ley.bottom - 2, "C", 0.55)
+    texto(surf, "Caníbal", fuentes.peq, COL["texto"], (ley.x + 132, ley.y + 8))
+
+    if badge:
+        r = texto(surf, badge, fuentes.negrita, (255, 255, 255), (x0 + w - 120, y0 + 14), "midtop")
+        pygame.draw.rect(surf, COL["barra"], r.inflate(20, 10), border_radius=8)
+        texto(surf, badge, fuentes.negrita, (255, 255, 255), (x0 + w - 120, y0 + 14), "midtop")
+    if etiqueta_superior:
+        r = fuentes.negrita.size(etiqueta_superior)
+        caja = pygame.Rect(0, 0, r[0] + 24, r[1] + 10)
+        caja.midtop = (x0 + w // 2, y0 + 108)
+        pygame.draw.rect(surf, (255, 255, 255), caja, border_radius=8)
+        pygame.draw.rect(surf, COL["borde"], caja, 1, border_radius=8)
+        texto(surf, etiqueta_superior, fuentes.negrita, COL["texto"], caja.center, "center")
+
+    if not anim and P.es_objetivo(estado):
+        caja = pygame.Rect(0, 0, 380, 46)
+        caja.center = (x0 + w // 2, y0 + 82)
+        pygame.draw.rect(surf, COL["ok"], caja, border_radius=10)
+        texto(surf, "¡Objetivo alcanzado! Todos cruzaron", fuentes.h2, (255, 255, 255),
+              caja.center, "center")
+
+    surf.set_clip(anterior_clip)
+    pygame.draw.rect(surf, COL["borde"], rect, 1, border_radius=4)

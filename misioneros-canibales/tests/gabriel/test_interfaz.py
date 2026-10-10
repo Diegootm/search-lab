@@ -156,3 +156,27 @@ class TestEtapa04DibujarPersonas(unittest.TestCase):
         I.dibujar_persona(superficie, 50, 100, "C", 0.5)
         self.assertEqual(superficie.get_at((47, 90))[:3], I.COL["canibal"])
         self.assertEqual(superficie.get_at((45, 60))[:3], (255, 255, 255))
+
+
+class TestEtapa05Escena(unittest.TestCase):
+    def setUp(self):
+        self.superficie = pygame.Surface((840, 330))
+        self.fuentes = I.Fuentes()
+        self.rect = (0, 0, 840, 330)
+
+    def test_rio_y_bote_a_la_izquierda(self):
+        I.dibujar_escena(self.superficie, self.rect, P.ESTADO_INICIAL, self.fuentes)
+        self.assertEqual(self.superficie.get_at((420, 315))[:3], I.COL["agua"])
+        self.assertEqual(self.superficie.get_at((258, 216))[:3], I.COL["madera2"])
+        self.assertNotEqual(self.superficie.get_at((484, 216))[:3], I.COL["madera2"])
+
+    def test_bote_a_la_derecha(self):
+        I.dibujar_escena(self.superficie, self.rect, P.Estado(3, 1, 0), self.fuentes)
+        self.assertEqual(self.superficie.get_at((484, 216))[:3], I.COL["madera2"])
+
+    def test_cruce_animado_y_cartel_de_objetivo(self):
+        anim = {"desde": P.ESTADO_INICIAL, "hasta": P.Estado(3, 1, 0), "t": 0.5}
+        I.dibujar_escena(self.superficie, self.rect, P.ESTADO_INICIAL, self.fuentes, anim,
+                         "Cruzan 2 caníbales (izq → der)", "BFS")
+        I.dibujar_escena(self.superficie, self.rect, P.ESTADO_OBJETIVO, self.fuentes)
+        self.assertEqual(self.superficie.get_at((240, 82))[:3], I.COL["ok"])
