@@ -1070,3 +1070,98 @@ class App:
         for i, (k_, v) in enumerate(datos):
             texto(s, k_, self.f.peq, COL["suave"], (r.x + 15, y + i * 20))
             texto(s, str(v), self.f.peq_b, COL["texto"], (r.right - 15, y + i * 20), "topright")
+
+    # -- comparación
+    def tiempos(self) -> dict:
+        clave = self.heuristica
+        if clave not in self._tiempos:
+            h = P.HEURISTICAS[self.heuristica]
+            self._tiempos[clave] = {
+                "bfs": medir_tiempo(bfs, 100),
+                "astar": medir_tiempo(lambda: a_estrella(heuristica=h), 100),
+            }
+        return self._tiempos[clave]
+
+    def dibujar_comp(self) -> None:
+        s = self.pantalla
+        rb, ra = self.resultado("bfs"), self.resultado("astar")
+        t = self.tiempos()
+        texto(s, f"Comparación de metodologías — A* con h(n) = {NOMBRE_H[self.heuristica]}",
+              self.f.h2, COL["texto"], (20, 82))
+
+        # Tabla de métricas
+        r = panel(s, (20, 118, 600, 380), self.f, "Métricas obtenidas (ejecución real)")
+        cols = (r.x + 15, r.x + 400, r.x + 530)
+        y = r.y + 42
+        texto(s, "Métrica", self.f.peq_b, COL["suave"], (cols[0], y))
+        texto(s, "BFS", self.f.peq_b, COL["acento"], (cols[1], y), "midtop")
+        texto(s, "A*", self.f.peq_b, COL["astar"], (cols[2], y), "midtop")
+        filas = [(k, va, vb) for (k, va), (_k, vb) in zip(tabla_metricas(rb), tabla_metricas(ra))
+                 if not k.startswith("Tiempo")]
+        filas.append(("Tiempo promedio (ms, 100 ejec.)", f"{t['bfs']['promedio']:.3f}",
+                      f"{t['astar']['promedio']:.3f}"))
+        misma = [n.estado for n in rb.ruta] == [n.estado for n in ra.ruta]
+        filas.append(("Misma ruta solución", "Sí" if misma else "No", "Sí" if misma else "No"))
+        for i, (k, va, vb) in enumerate(filas):
+            yy = y + 24 + i * 25
+            if i % 2 == 0:
+                pygame.draw.rect(s, (248, 250, 252), (r.x + 8, yy - 3, r.w - 16, 25))
+            texto(s, k, self.f.peq, COL["texto"], (cols[0], yy))
+            texto(s, va, self.f.peq_b, COL["texto"], (cols[1], yy), "midtop")
+            texto(s, vb, self.f.peq_b, COL["texto"], (cols[2], yy), "midtop")
+
+        # Gráfico de barras
+        r = panel(s, (640, 118, 620, 380), self.f, "Gráfico comparativo")
+        metricas = [("Nodos generados", rb.nodos_generados, ra.nodos_generados),
+                    ("Nodos expandidos", rb.nodos_expandidos, ra.nodos_expandidos),
+                    ("Estados visitados", rb.estados_visitados, ra.estados_visitados),
+                    ("Repetidos", rb.descartados_repetidos, ra.descartados_repetidos),
+                    ("Inválidos", rb.descartados_invalidos, ra.descartados_invalidos),
+                    ("Máx. frontera", rb.max_frontera, ra.max_frontera)]
+        maximo = max(max(b, a) for _n, b, a in metricas) or 1
+        x_barra, ancho_max = r.x + 150, r.w - 210
+        for i, (nombre, vb, va) in enumerate(metricas):
+            y = r.y + 46 + i * 52
+            texto(s, nombre, self.f.peq, COL["texto"], (r.x + 15, y + 10))
+            for j, (v, color) in enumerate(((vb, COL["acento"]), (va, COL["astar"]))):
+                largo = max(2, int(ancho_max * v / maximo))
+                pygame.draw.rect(s, color, (x_barra, y + j * 20, largo, 16), border_radius=4)
+                texto(s, str(v), self.f.peq_b, COL["texto"], (x_barra + largo + 6, y + j * 20))
+        y = r.bottom - 26
+        pygame.draw.rect(s, COL["acento"], (x_barra, y + 2, 14, 12), border_radius=3)
+        texto(s, "BFS", self.f.peq, COL["texto"], (x_barra + 20, y))
+        pygame.draw.rect(s, COL["astar"], (x_barra + 80, y + 2, 14, 12), border_radius=3)
+        texto(s, "A*", self.f.peq, COL["texto"], (x_barra + 100, y))
+
+        # Evaluación teórica
+        r = panel(s, (20, 508, 1240, 140), self.f, "Parámetros de evaluación de búsquedas")
+        cols = (r.x + 15, r.x + 400, r.x + 800)
+        texto(s, "BFS", self.f.peq_b, COL["acento"], (cols[1], r.y + 13))
+        texto(s, "A*", self.f.peq_b, COL["astar"], (cols[2], r.y + 13))
+        for i, criterio in enumerate(EVALUACION_TEORICA["BFS"]):
+            y = r.y + 38 + i * 24
+            texto(s, criterio, self.f.peq_b, COL["texto"], (cols[0], y))
+            texto(s, EVALUACION_TEORICA["BFS"][criterio], self.f.peq, COL["texto"], (cols[1], y))
+            criterio_a = EVALUACION_TEORICA["A*"][criterio]
+            if criterio == "Optimalidad" and self.heuristica == "personas":
+                criterio_a = "No garantizada (h = M+C no es admisible)"
+            texto(s, criterio_a, self.f.peq, COL["texto"], (cols[2], y))
+
+        # Conclusiones
+        r = panel(s, (20, 658, 1240, 132), self.f, "Conclusiones")
+        dif = rb.nodos_expandidos - ra.nodos_expandidos
+        pct = 100 * dif / rb.nodos_expandidos if rb.nodos_expandidos else 0
+        mas_rapido = "BFS" if t["bfs"]["promedio"] < t["astar"]["promedio"] else "A*"
+        lineas = [
+            f"• Ambas metodologías encuentran una solución de {rb.longitud} (BFS) y {ra.longitud} (A*) "
+            f"cruces; {'es la misma ruta' if misma else 'las rutas difieren'} y el óptimo es 11.",
+            f"• A* expandió {ra.nodos_expandidos} nodos frente a {rb.nodos_expandidos} de BFS "
+            f"({pct:.0f}% {'menos' if dif >= 0 else 'más'}) gracias a la heurística, que prioriza "
+            f"los estados con menos personas por cruzar.",
+            f"• El espacio de estados es muy pequeño ({len(P.estados_validos())} estados válidos, "
+            f"{rb.estados_visitados} visitados por BFS) y muy restringido, por eso la diferencia es reducida.",
+            f"• En tiempo fue más rápido {mas_rapido}: A* paga el costo de la cola de prioridad y de "
+            f"calcular h(n) en cada nodo.",
+        ]
+        for i, l in enumerate(lineas):
+            texto(s, l, self.f.peq, COL["texto"], (r.x + 15, r.y + 38 + i * 21))

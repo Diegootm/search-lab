@@ -477,3 +477,20 @@ class TestEtapa11Arbol(unittest.TestCase):
         self.app.i_vel = 3
         correr(self.app, total * 0.25 + 1)
         self.assertEqual(self.app.arbol_paso, total)
+
+
+class TestEtapa12Comparacion(unittest.TestCase):
+    def setUp(self):
+        self.app = nueva_app()
+        self.app.cambiar_modo("comp")
+
+    def test_dibujar_comparacion(self):
+        self.app.dibujar()
+        self.assertIn("cruces", self.app._tiempos)
+        self.assertEqual(set(self.app._tiempos["cruces"]), {"bfs", "astar"})
+
+    def test_cambiar_heuristica_en_la_comparacion(self):
+        pulsar(self.app, pygame.K_h)
+        self.assertEqual(self.app.heuristica, "personas")
+        self.app.dibujar()
+        self.assertIn("personas", self.app._tiempos)
