@@ -370,6 +370,7 @@ class App:
         self.arbol_timer = 0.0
         # Manual
         self.reiniciar_manual()
+        self._crear_botones()
 
     # ----------------------------------------------------------------- datos
     @property
@@ -569,3 +570,159 @@ class App:
         pygame.image.save(self.pantalla, ruta)
         self.aviso(f"Captura guardada: capturas/{nombre}")
         return ruta
+
+    # --------------------------------------------------------------- botones
+    def _crear_botones(self) -> None:
+        superior = []
+        for i, (clave, nombre) in enumerate(self.MODOS):
+            superior.append(Boton((470 + i * 152, 10, 145, 36), nombre,
+                                  lambda c=clave: self.cambiar_modo(c),
+                                  seleccionado=lambda c=clave: self.modo == c, oscuro=True))
+
+        metodo = [
+            Boton((895, 106, 110, 34), "BFS", lambda: self.seleccionar_algoritmo("bfs"),
+                  seleccionado=lambda: self.algoritmo == "bfs"),
+            Boton((1015, 106, 110, 34), "A*", lambda: self.seleccionar_algoritmo("astar"),
+                  seleccionado=lambda: self.algoritmo == "astar", color=COL["astar"]),
+            Boton((1135, 106, 110, 34), "Captura", lambda: self.captura()),
+            Boton((895, 148, 350, 30), lambda: f"h(n) de A*: {NOMBRE_H[self.heuristica]}",
+                  self.alternar_heuristica),
+        ]
+        resuelto = lambda: self.resuelto  # noqa: E731
+        y = 412
+        controles_sim = [
+            Boton((20, y, 100, 42), "Resolver", self.resolver, color=COL["ok"],
+                  seleccionado=lambda: not self.resuelto),
+            Boton((128, y, 70, 42), "Inicio", self.ir_inicio, habilitado=resuelto),
+            Boton((206, y, 88, 42), "Anterior", self.retroceder, habilitado=resuelto),
+            Boton((302, y, 110, 42), lambda: "Pausa" if self.reproduciendo else "Reproducir",
+                  self.alternar_reproduccion, seleccionado=lambda: self.reproduciendo),
+            Boton((420, y, 92, 42), "Siguiente", self.avanzar, habilitado=resuelto),
+            Boton((520, y, 62, 42), "Final", self.ir_final, habilitado=resuelto),
+            Boton((590, y, 125, 42), lambda: f"Velocidad: {self.vel:g}x", self.cambiar_velocidad),
+        ]
+        y = 745
+        controles_arbol = [
+            Boton((20, y, 80, 42), "Inicio", lambda: self.arbol_mover(absoluto=0)),
+            Boton((108, y, 95, 42), "Anterior", lambda: self.arbol_mover(-1)),
+            Boton((211, y, 120, 42), lambda: "Pausa" if self.arbol_rep else "Reproducir",
+                  self.alternar_reproduccion, seleccionado=lambda: self.arbol_rep),
+            Boton((339, y, 100, 42), "Siguiente", lambda: self.arbol_mover(1)),
+            Boton((447, y, 70, 42), "Final", self.arbol_final),
+            Boton((525, y, 135, 42), lambda: f"Velocidad: {self.vel:g}x", self.cambiar_velocidad),
+        ]
+        comp = [
+            Boton((900, 78, 220, 30), lambda: f"h(n): {self.heuristica}", self.alternar_heuristica),
+            Boton((1130, 78, 120, 30), "Captura", lambda: self.captura()),
+        ]
+        y = 412
+        acciones = [((1, 0), "1 Misionero", 130), ((2, 0), "2 Misioneros", 140),
+                    ((0, 1), "1 Caníbal", 120), ((0, 2), "2 Caníbales", 130), ((1, 1), "1M + 1C", 100)]
+        manual = []
+        x = 20
+        for accion, nombre, ancho in acciones:
+            manual.append(Boton((x, y, ancho, 42), nombre, lambda a=accion: self.mover_manual(a)))
+            x += ancho + 8
+        manual += [
+            Boton((x, y, 95, 42), "Deshacer", self.deshacer_manual,
+                  habilitado=lambda: bool(self.manual_hist)),
+            Boton((880, 745, 120, 42), "Pista (BFS)", self.pista, color=COL["acento"]),
+            Boton((1008, 745, 120, 42), "Reiniciar", self.reiniciar_manual),
+            Boton((1136, 745, 124, 42), "Captura", lambda: self.captura()),
+        ]
+        self.botones = {
+            "superior": superior,
+            "sim": metodo + controles_sim,
+            "arbol": metodo + controles_arbol,
+            "comp": comp,
+            "manual": manual,
+        }
+
+    def botones_activos(self) -> list[Boton]:
+        return self.botones["superior"] + self.botones[self.modo]
+
+    # ---------------------------------------------------------------- eventos
+    def manejar_evento(self, ev) -> None:
+        if ev.type == pygame.QUIT:
+            self.corriendo = False
+        elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
+            for b in self.botones_activos():
+                if b.click(ev.pos):
+                    return
+            if self.modo == "sim" and self.resuelto and not self.anim:
+                fila = (ev.pos[1] - (self.PANEL_RUTA.y + 44)) // 21
+                if self.PANEL_RUTA.collidepoint(ev.pos) and 0 <= fila <= self.n_pasos():
+                    self.reproduciendo = False
+                    self.paso = fila
+        elif ev.type == pygame.MOUSEWHEEL:
+            if self.modo == "sim" and self.PANEL_PROCESO.collidepoint(pygame.mouse.get_pos()):
+                self.scroll_proceso = max(0, self.scroll_proceso - ev.y * 38)
+        elif ev.type == pygame.KEYDOWN:
+            self.manejar_tecla(ev.key)
+
+    def manejar_tecla(self, k) -> None:
+        if k == pygame.K_ESCAPE:
+            self.corriendo = False
+        elif k == pygame.K_F12:
+            self.captura()
+        elif k == pygame.K_TAB:
+            self.siguiente_modo()
+        elif self.modo in ("sim", "arbol"):
+            if k == pygame.K_b:
+                self.seleccionar_algoritmo("bfs")
+            elif k == pygame.K_a:
+                self.seleccionar_algoritmo("astar")
+            elif k == pygame.K_h:
+                self.alternar_heuristica()
+            elif k == pygame.K_SPACE:
+                self.alternar_reproduccion()
+            elif self.modo == "sim":
+                acciones = {pygame.K_r: self.resolver, pygame.K_RIGHT: self.avanzar,
+                            pygame.K_LEFT: self.retroceder, pygame.K_HOME: self.ir_inicio,
+                            pygame.K_END: self.ir_final}
+                if k in acciones:
+                    acciones[k]()
+            else:
+                acciones = {pygame.K_RIGHT: lambda: self.arbol_mover(1),
+                            pygame.K_LEFT: lambda: self.arbol_mover(-1),
+                            pygame.K_HOME: lambda: self.arbol_mover(absoluto=0),
+                            pygame.K_END: self.arbol_final}
+                if k in acciones:
+                    acciones[k]()
+        elif self.modo == "comp" and k == pygame.K_h:
+            self.alternar_heuristica()
+        elif self.modo == "manual":
+            teclas = {pygame.K_1: (1, 0), pygame.K_2: (2, 0), pygame.K_3: (0, 1),
+                      pygame.K_4: (0, 2), pygame.K_5: (1, 1)}
+            if k in teclas:
+                self.mover_manual(teclas[k])
+            elif k == pygame.K_BACKSPACE:
+                self.deshacer_manual()
+            elif k == pygame.K_p:
+                self.pista()
+
+    def actualizar(self, dt: float) -> None:
+        if self.anim:
+            self.anim["t"] += dt / self.anim["dur"]
+            if self.anim["t"] >= 1:
+                self.terminar_anim()
+        if self.modo == "sim" and self.reproduciendo and not self.anim:
+            if self.paso >= self.n_pasos():
+                self.reproduciendo = False
+            else:
+                self.espera += dt
+                if self.espera >= 0.35 / self.vel:
+                    self.espera = 0.0
+                    self.avanzar()
+        if self.modo == "arbol" and self.arbol_rep:
+            self.arbol_timer += dt
+            if self.arbol_timer >= 0.8 / self.vel:
+                self.arbol_timer = 0.0
+                if self.arbol_paso < len(self.resultado().traza):
+                    self.arbol_paso += 1
+                else:
+                    self.arbol_rep = False
+        if self.toast:
+            self.toast[1] -= dt
+            if self.toast[1] <= 0:
+                self.toast = None

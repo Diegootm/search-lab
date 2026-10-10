@@ -339,3 +339,70 @@ class TestEtapa08ModoManual(unittest.TestCase):
                 self.assertTrue(os.path.exists(ruta))
             finally:
                 I.ruta_base = original
+
+
+class TestEtapa09BotonesYEventos(unittest.TestCase):
+    def setUp(self):
+        self.app = nueva_app()
+
+    def test_botones_de_cada_modo(self):
+        self.assertEqual(set(self.app.botones), {"superior", "sim", "arbol", "comp", "manual"})
+        self.assertEqual(len(self.app.botones["superior"]), 4)
+
+    def test_resolver_con_clic_y_avanzar_con_teclado(self):
+        clic_en_boton(self, self.app, "Resolver")
+        self.assertTrue(self.app.resuelto)
+        pulsar(self.app, pygame.K_RIGHT)
+        self.assertIsNotNone(self.app.anim)
+        correr(self.app, 2)
+        self.assertEqual(self.app.paso, 1)
+
+    def test_reproduccion_automatica(self):
+        clic_en_boton(self, self.app, "Reproducir")
+        self.app.i_vel = 3  # velocidad 4x
+        correr(self.app, 15)
+        self.assertEqual(self.app.paso, 11)
+        self.assertFalse(self.app.reproduciendo)
+
+    def test_clic_en_una_fila_de_la_ruta(self):
+        clic_en_boton(self, self.app, "Resolver")
+        panel = self.app.PANEL_RUTA
+        self.app.manejar_evento(pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1,
+                                                   pos=(panel.x + 50, panel.y + 44 + 5 * 21 + 5)))
+        self.assertEqual(self.app.paso, 5)
+
+    def test_cambiar_de_pestana(self):
+        pulsar(self.app, pygame.K_TAB)
+        self.assertEqual(self.app.modo, "arbol")
+        clic_en_boton(self, self.app, "Comparación")
+        self.assertEqual(self.app.modo, "comp")
+        clic_en_boton(self, self.app, "Modo manual")
+        self.assertEqual(self.app.modo, "manual")
+
+    def test_teclas_del_modo_manual(self):
+        app = self.app
+        app.cambiar_modo("manual")
+        pulsar(app, pygame.K_2)                     # 2 misioneros: inválido
+        self.assertEqual(app.manual_invalidos, 1)
+        pulsar(app, pygame.K_3)                     # 1 caníbal: válido
+        correr(app, 2)
+        self.assertEqual(app.manual_estado, P.Estado(3, 2, 0))
+        pulsar(app, pygame.K_BACKSPACE)
+        self.assertEqual(app.manual_estado, P.ESTADO_INICIAL)
+        pulsar(app, pygame.K_p)
+        self.assertIn("Pista", app.manual_msg[0])
+
+    def test_teclas_del_arbol(self):
+        app = self.app
+        app.cambiar_modo("arbol")
+        pulsar(app, pygame.K_RIGHT)
+        self.assertEqual(app.arbol_paso, 1)
+        pulsar(app, pygame.K_END)
+        self.assertEqual(app.arbol_paso, len(app.resultado().traza))
+        pulsar(app, pygame.K_a)
+        self.assertEqual(app.algoritmo, "astar")
+        self.assertEqual(app.arbol_paso, 0)
+
+    def test_salir(self):
+        self.app.manejar_evento(pygame.event.Event(pygame.QUIT))
+        self.assertFalse(self.app.corriendo)
