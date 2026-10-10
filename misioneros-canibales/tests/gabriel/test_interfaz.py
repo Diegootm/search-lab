@@ -180,3 +180,34 @@ class TestEtapa05Escena(unittest.TestCase):
                          "Cruzan 2 caníbales (izq → der)", "BFS")
         I.dibujar_escena(self.superficie, self.rect, P.ESTADO_OBJETIVO, self.fuentes)
         self.assertEqual(self.superficie.get_at((240, 82))[:3], I.COL["ok"])
+
+
+class TestEtapa06AppBase(unittest.TestCase):
+    def setUp(self):
+        self.app = nueva_app()
+
+    def test_valores_iniciales(self):
+        app = self.app
+        self.assertEqual((app.modo, app.algoritmo, app.heuristica), ("sim", "bfs", "cruces"))
+        self.assertEqual(app.vel, 1.0)
+        self.assertFalse(app.resuelto)
+        self.assertEqual(app.paso, 0)
+
+    def test_resultados_de_los_algoritmos(self):
+        r = self.app.resultado("bfs")
+        self.assertEqual(r.longitud, 11)
+        self.assertIs(self.app.resultado("bfs"), r)  # se guarda en caché
+        self.assertEqual(self.app.resultado("astar").nodos_expandidos, 12)
+
+    def test_antes_de_resolver(self):
+        self.assertEqual(self.app.ruta(), [])
+        self.assertEqual(self.app.n_pasos(), 0)
+        self.assertEqual(self.app.estado_sim(), P.ESTADO_INICIAL)
+        self.assertEqual(self.app.nombre_algoritmo(), "BFS (Anchura)")
+        self.assertEqual(self.app.nombre_algoritmo("astar"), "A* (A estrella)")
+
+    def test_despues_de_resolver(self):
+        self.app.resuelto = True
+        self.assertEqual(self.app.n_pasos(), 11)
+        self.app.paso = 1
+        self.assertEqual(self.app.estado_sim(), P.Estado(3, 1, 0))

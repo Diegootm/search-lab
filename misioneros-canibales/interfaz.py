@@ -330,3 +330,70 @@ def dibujar_escena(surf, rect, estado: Estado, fuentes: Fuentes, anim=None,
 
     surf.set_clip(anterior_clip)
     pygame.draw.rect(surf, COL["borde"], rect, 1, border_radius=4)
+
+
+# ---------------------------------------------------------------------------
+# Aplicación
+# ---------------------------------------------------------------------------
+
+class App:
+    MODOS = [("sim", "Simulación"), ("arbol", "Proceso / Árbol"),
+             ("comp", "Comparación"), ("manual", "Modo manual")]
+    ESCENA = pygame.Rect(20, 70, 840, 330)
+    PANEL_RUTA = pygame.Rect(20, 470, 410, 320)
+    PANEL_PROCESO = pygame.Rect(440, 470, 420, 320)
+    LIENZO_ARBOL = pygame.Rect(20, 70, 840, 665)
+
+    def __init__(self, pantalla: pygame.Surface) -> None:
+        self.pantalla = pantalla
+        self.f = Fuentes()
+        self.reloj = pygame.time.Clock()
+        self.corriendo = True
+        self.modo = "sim"
+        self.algoritmo = "bfs"
+        self.heuristica = "cruces"
+        self._cache: dict = {}
+        self._tiempos: dict = {}
+        self.velocidades = [0.5, 1.0, 2.0, 4.0]
+        self.i_vel = 1
+        self.anim = None
+        self.toast = None
+        # Simulación
+        self.resuelto = False
+        self.paso = 0
+        self.reproduciendo = False
+        self.espera = 0.0
+        self.scroll_proceso = 0
+        # Árbol
+        self.arbol_paso = 0
+        self.arbol_rep = False
+        self.arbol_timer = 0.0
+
+    # ----------------------------------------------------------------- datos
+    @property
+    def vel(self) -> float:
+        return self.velocidades[self.i_vel]
+
+    def resultado(self, algoritmo: str | None = None) -> ResultadoBusqueda:
+        alg = algoritmo or self.algoritmo
+        clave = (alg, self.heuristica if alg == "astar" else None)
+        if clave not in self._cache:
+            if alg == "bfs":
+                self._cache[clave] = bfs()
+            else:
+                self._cache[clave] = a_estrella(heuristica=P.HEURISTICAS[self.heuristica])
+        return self._cache[clave]
+
+    def nombre_algoritmo(self, alg: str | None = None) -> str:
+        alg = alg or self.algoritmo
+        return "BFS (Anchura)" if alg == "bfs" else "A* (A estrella)"
+
+    def ruta(self):
+        return self.resultado().ruta if self.resuelto else []
+
+    def n_pasos(self) -> int:
+        return max(len(self.ruta()) - 1, 0)
+
+    def estado_sim(self) -> Estado:
+        ruta = self.ruta()
+        return ruta[self.paso].estado if ruta else P.ESTADO_INICIAL
