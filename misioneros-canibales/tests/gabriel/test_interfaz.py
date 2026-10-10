@@ -211,3 +211,75 @@ class TestEtapa06AppBase(unittest.TestCase):
         self.assertEqual(self.app.n_pasos(), 11)
         self.app.paso = 1
         self.assertEqual(self.app.estado_sim(), P.Estado(3, 1, 0))
+
+
+class TestEtapa07Acciones(unittest.TestCase):
+    def setUp(self):
+        self.app = nueva_app()
+
+    def test_resolver_y_avanzar(self):
+        app = self.app
+        app.resolver()
+        self.assertTrue(app.resuelto)
+        self.assertIsNotNone(app.toast)
+        app.avanzar()
+        self.assertIsNotNone(app.anim)
+        app.terminar_anim()
+        self.assertEqual(app.paso, 1)
+        self.assertEqual(app.estado_sim(), P.Estado(3, 1, 0))
+
+    def test_navegar_por_la_ruta(self):
+        app = self.app
+        app.resolver()
+        app.ir_final()
+        self.assertEqual(app.paso, 11)
+        self.assertTrue(P.es_objetivo(app.estado_sim()))
+        app.retroceder()
+        self.assertEqual(app.paso, 10)
+        app.ir_inicio()
+        app.retroceder()
+        self.assertEqual(app.paso, 0)
+
+    def test_cambiar_algoritmo_y_heuristica(self):
+        app = self.app
+        app.resolver()
+        app.seleccionar_algoritmo("astar")
+        self.assertEqual(app.algoritmo, "astar")
+        self.assertFalse(app.resuelto)
+        app.alternar_heuristica()
+        self.assertEqual(app.heuristica, "personas")
+        self.assertIn("personas", app.resultado().algoritmo)
+        app.alternar_heuristica()
+        self.assertEqual(app.heuristica, "cruces")
+
+    def test_velocidad(self):
+        valores = []
+        for _ in range(4):
+            self.app.cambiar_velocidad()
+            valores.append(self.app.vel)
+        self.assertEqual(valores, [2.0, 4.0, 0.5, 1.0])
+
+    def test_pasos_del_arbol(self):
+        app = self.app
+        total = len(app.resultado().traza)
+        app.arbol_mover(1)
+        self.assertEqual(app.arbol_paso, 1)
+        app.arbol_final()
+        self.assertEqual(app.arbol_paso, total)
+        app.arbol_mover(1)
+        self.assertEqual(app.arbol_paso, total)  # no se pasa del final
+        app.arbol_mover(-100)
+        self.assertEqual(app.arbol_paso, 0)
+
+    def test_reproducir_y_cambiar_de_modo(self):
+        app = self.app
+        app.alternar_reproduccion()
+        self.assertTrue(app.resuelto)
+        self.assertTrue(app.reproduciendo)
+        app.cambiar_modo("arbol")
+        self.assertFalse(app.reproduciendo)
+        app.siguiente_modo()
+        self.assertEqual(app.modo, "comp")
+        app.siguiente_modo()
+        app.siguiente_modo()
+        self.assertEqual(app.modo, "sim")

@@ -397,3 +397,106 @@ class App:
     def estado_sim(self) -> Estado:
         ruta = self.ruta()
         return ruta[self.paso].estado if ruta else P.ESTADO_INICIAL
+
+    # -------------------------------------------------------------- acciones
+    def aviso(self, mensaje: str, segundos: float = 2.5) -> None:
+        self.toast = [mensaje, segundos]
+
+    def terminar_anim(self) -> None:
+        if self.anim:
+            fin = self.anim["fin"]
+            self.anim = None
+            fin()
+
+    def cambiar_modo(self, modo: str) -> None:
+        self.terminar_anim()
+        self.reproduciendo = self.arbol_rep = False
+        self.modo = modo
+
+    def siguiente_modo(self) -> None:
+        claves = [m for m, _ in self.MODOS]
+        self.cambiar_modo(claves[(claves.index(self.modo) + 1) % len(claves)])
+
+    def seleccionar_algoritmo(self, alg: str) -> None:
+        self.terminar_anim()
+        self.algoritmo = alg
+        self.reiniciar_sim()
+        self.arbol_paso = 0
+        self.arbol_rep = False
+
+    def alternar_heuristica(self) -> None:
+        self.heuristica = "personas" if self.heuristica == "cruces" else "cruces"
+        if self.algoritmo == "astar":
+            self.seleccionar_algoritmo("astar")
+        self.aviso(f"Heurística de A*: {NOMBRE_H[self.heuristica]}")
+
+    def reiniciar_sim(self) -> None:
+        self.resuelto = False
+        self.paso = 0
+        self.reproduciendo = False
+        self.scroll_proceso = 0
+
+    def resolver(self) -> None:
+        self.terminar_anim()
+        r = self.resultado()
+        self.resuelto = True
+        self.paso = 0
+        self.reproduciendo = False
+        self.scroll_proceso = 0
+        self.aviso(f"{r.algoritmo}: solución de {r.longitud} cruces, "
+                   f"{r.nodos_expandidos} nodos expandidos")
+
+    def iniciar_anim(self, desde: Estado, hasta: Estado, fin) -> None:
+        self.anim = {"desde": desde, "hasta": hasta, "t": 0.0, "dur": 1.2 / self.vel, "fin": fin}
+
+    def avanzar(self) -> None:
+        if self.anim or not self.resuelto or self.paso >= self.n_pasos():
+            return
+        ruta = self.ruta()
+
+        def fin():
+            self.paso += 1
+        self.iniciar_anim(ruta[self.paso].estado, ruta[self.paso + 1].estado, fin)
+
+    def retroceder(self) -> None:
+        self.reproduciendo = False
+        if self.anim:
+            self.anim = None
+        elif self.paso > 0:
+            self.paso -= 1
+
+    def ir_inicio(self) -> None:
+        self.anim = None
+        self.reproduciendo = False
+        self.paso = 0
+
+    def ir_final(self) -> None:
+        self.anim = None
+        self.reproduciendo = False
+        self.paso = self.n_pasos()
+
+    def alternar_reproduccion(self) -> None:
+        if self.modo == "arbol":
+            if self.arbol_paso >= len(self.resultado().traza):
+                self.arbol_paso = 0
+            self.arbol_rep = not self.arbol_rep
+            return
+        if not self.resuelto:
+            self.resolver()
+        if self.paso >= self.n_pasos():
+            self.paso = 0
+        self.reproduciendo = not self.reproduciendo
+        self.espera = 1.0
+
+    def cambiar_velocidad(self) -> None:
+        self.i_vel = (self.i_vel + 1) % len(self.velocidades)
+
+    # árbol
+    def arbol_mover(self, delta: int | None = None, absoluto: int | None = None) -> None:
+        total = len(self.resultado().traza)
+        self.arbol_rep = False
+        valor = absoluto if absoluto is not None else self.arbol_paso + (delta or 0)
+        self.arbol_paso = max(0, min(total, valor))
+
+    def arbol_final(self) -> None:
+        self.arbol_mover(absoluto=len(self.resultado().traza))
