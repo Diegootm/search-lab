@@ -109,3 +109,34 @@ class TestEtapa02Utilidades(unittest.TestCase):
         rect = I.panel(superficie, (10, 10, 100, 50), fuentes, "Título")
         self.assertEqual(rect, pygame.Rect(10, 10, 100, 50))
         self.assertEqual(superficie.get_at((50, 55))[:3], I.COL["panel"])
+
+
+class TestEtapa03Boton(unittest.TestCase):
+    def setUp(self):
+        self.pulsado = []
+        self.boton = I.Boton((10, 10, 100, 30), "Hola", lambda: self.pulsado.append(1))
+
+    def test_clic_dentro_ejecuta_la_accion(self):
+        self.assertTrue(self.boton.click((20, 20)))
+        self.assertEqual(self.pulsado, [1])
+
+    def test_clic_fuera_no_hace_nada(self):
+        self.assertFalse(self.boton.click((500, 500)))
+        self.assertEqual(self.pulsado, [])
+
+    def test_boton_deshabilitado(self):
+        boton = I.Boton((10, 10, 100, 30), "No", lambda: self.pulsado.append(1),
+                        habilitado=lambda: False)
+        self.assertFalse(boton.click((20, 20)))
+        self.assertEqual(self.pulsado, [])
+
+    def test_dibujar_en_todos_los_estados(self):
+        superficie = pygame.Surface((200, 100))
+        fuentes = I.Fuentes()
+        seleccionado = I.Boton((10, 10, 100, 30), lambda: "Dinámico", lambda: None,
+                               seleccionado=lambda: True)
+        seleccionado.dibujar(superficie, fuentes.peq_b, (0, 0))
+        self.assertEqual(superficie.get_at((15, 25))[:3], I.COL["acento"])
+        self.boton.dibujar(superficie, fuentes.peq_b, (20, 20))  # ratón encima
+        I.Boton((10, 50, 100, 30), "Pestaña", lambda: None, oscuro=True).dibujar(
+            superficie, fuentes.peq_b, (0, 0))

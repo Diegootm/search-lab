@@ -127,3 +127,39 @@ def panel(surf, rect, fuentes=None, titulo=None) -> pygame.Rect:
     if titulo and fuentes:
         texto(surf, titulo, fuentes.h2, COL["texto"], (rect.x + 14, rect.y + 10))
     return rect
+
+
+class Boton:
+    def __init__(self, rect, etiqueta, accion, seleccionado=None, habilitado=None,
+                 color=None, oscuro=False):
+        self.rect = pygame.Rect(rect)
+        self.etiqueta = etiqueta
+        self.accion = accion
+        self.seleccionado = seleccionado or (lambda: False)
+        self.habilitado = habilitado or (lambda: True)
+        self.color = color or COL["acento"]
+        self.oscuro = oscuro
+
+    def dibujar(self, surf, fuente, mouse) -> None:
+        hab, sel = self.habilitado(), self.seleccionado()
+        hover = hab and self.rect.collidepoint(mouse)
+        if sel:
+            fondo, borde, color_txt = self.color, self.color, (255, 255, 255)
+        elif not hab:
+            fondo, borde, color_txt = (241, 245, 249), COL["borde"], (175, 185, 200)
+        elif self.oscuro:
+            fondo = (71, 85, 105) if hover else COL["barra2"]
+            borde, color_txt = fondo, (226, 232, 240)
+        else:
+            fondo = COL["boton_hover"] if hover else COL["boton"]
+            borde, color_txt = COL["borde"], COL["texto"]
+        pygame.draw.rect(surf, fondo, self.rect, border_radius=8)
+        pygame.draw.rect(surf, borde, self.rect, 1, border_radius=8)
+        etiqueta = self.etiqueta() if callable(self.etiqueta) else self.etiqueta
+        texto(surf, etiqueta, fuente, color_txt, self.rect.center, "center")
+
+    def click(self, pos) -> bool:
+        if self.habilitado() and self.rect.collidepoint(pos):
+            self.accion()
+            return True
+        return False
