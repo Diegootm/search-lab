@@ -368,6 +368,8 @@ class App:
         self.arbol_paso = 0
         self.arbol_rep = False
         self.arbol_timer = 0.0
+        # Manual
+        self.reiniciar_manual()
 
     # ----------------------------------------------------------------- datos
     @property
@@ -500,3 +502,70 @@ class App:
 
     def arbol_final(self) -> None:
         self.arbol_mover(absoluto=len(self.resultado().traza))
+
+    # manual
+    def reiniciar_manual(self) -> None:
+        self.anim = None
+        self.manual_estado = P.ESTADO_INICIAL
+        self.manual_hist: list[tuple[Estado, tuple[int, int]]] = []
+        self.manual_invalidos = 0
+        self.manual_msg = ("Elige quién cruza en el bote (teclas 1-5).", COL["suave"])
+
+    def mover_manual(self, accion: tuple[int, int]) -> None:
+        if self.anim:
+            return
+        e = self.manual_estado
+        if P.es_objetivo(e):
+            self.manual_msg = ("Ya resolviste el problema. Pulsa «Reiniciar».", COL["ok"])
+            return
+        nuevo = P.aplicar(e, accion)
+        motivo = P.motivo_invalidez(nuevo)
+        if motivo:
+            self.manual_invalidos += 1
+            self.manual_msg = (f"Movimiento inválido ({P.nombre_accion(accion)} → {nuevo}): {motivo}",
+                               COL["error"])
+            return
+        visitados = {estado for estado, _a in self.manual_hist}
+        repetido = nuevo in visitados
+
+        def fin():
+            self.manual_estado = nuevo
+            self.manual_hist.append((e, accion))
+            if P.es_objetivo(nuevo):
+                self.manual_msg = (f"¡Lo lograste en {len(self.manual_hist)} cruces! "
+                                   f"(el óptimo es 11)", COL["ok"])
+            elif repetido:
+                self.manual_msg = (f"Estado {nuevo} repetido: volviste a un estado anterior (ciclo).",
+                                   COL["meta"])
+            else:
+                self.manual_msg = (f"{P.describir_movimiento(accion, e)} → {nuevo}", COL["texto"])
+        self.manual_msg = (P.describir_movimiento(accion, e) + "...", COL["texto"])
+        self.iniciar_anim(e, nuevo, fin)
+
+    def deshacer_manual(self) -> None:
+        if self.anim or not self.manual_hist:
+            return
+        self.manual_estado, accion = self.manual_hist.pop()
+        self.manual_msg = (f"Se deshizo el movimiento {P.nombre_accion(accion)}.", COL["suave"])
+
+    def pista(self) -> None:
+        if self.anim:
+            return
+        r = bfs(self.manual_estado)
+        if not r.encontrada:
+            self.manual_msg = ("No hay solución desde este estado.", COL["error"])
+        elif r.longitud == 0:
+            self.manual_msg = ("Ya estás en el estado objetivo.", COL["ok"])
+        else:
+            accion = r.ruta[1].accion
+            self.manual_msg = (f"Pista (BFS): {P.describir_movimiento(accion, self.manual_estado)}"
+                               f" — faltan {r.longitud} cruces como mínimo.", COL["acento"])
+
+    def captura(self, nombre: str | None = None) -> str:
+        carpeta = os.path.join(ruta_base(), "capturas")
+        os.makedirs(carpeta, exist_ok=True)
+        nombre = nombre or f"captura_{self.modo}_{datetime.now():%Y%m%d_%H%M%S}.png"
+        ruta = os.path.join(carpeta, nombre)
+        pygame.image.save(self.pantalla, ruta)
+        self.aviso(f"Captura guardada: capturas/{nombre}")
+        return ruta

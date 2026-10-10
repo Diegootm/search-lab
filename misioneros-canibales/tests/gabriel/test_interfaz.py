@@ -283,3 +283,59 @@ class TestEtapa07Acciones(unittest.TestCase):
         app.siguiente_modo()
         app.siguiente_modo()
         self.assertEqual(app.modo, "sim")
+
+
+class TestEtapa08ModoManual(unittest.TestCase):
+    def setUp(self):
+        self.app = nueva_app()
+
+    def test_estado_inicial_del_juego(self):
+        self.assertEqual(self.app.manual_estado, P.ESTADO_INICIAL)
+        self.assertEqual(self.app.manual_hist, [])
+        self.assertEqual(self.app.manual_invalidos, 0)
+
+    def test_movimiento_invalido(self):
+        self.app.mover_manual((2, 0))
+        self.assertEqual(self.app.manual_estado, P.ESTADO_INICIAL)
+        self.assertEqual(self.app.manual_invalidos, 1)
+        self.assertIn("inválido", self.app.manual_msg[0])
+        self.assertIsNone(self.app.anim)
+
+    def test_movimiento_valido_y_ciclo(self):
+        app = self.app
+        app.mover_manual((0, 1))
+        self.assertIsNotNone(app.anim)
+        app.terminar_anim()
+        self.assertEqual(app.manual_estado, P.Estado(3, 2, 0))
+        app.mover_manual((0, 1))
+        app.terminar_anim()
+        self.assertEqual(app.manual_estado, P.ESTADO_INICIAL)
+        self.assertIn("repetido", app.manual_msg[0])
+
+    def test_deshacer_y_pista(self):
+        app = self.app
+        app.mover_manual((0, 2))
+        app.terminar_anim()
+        app.deshacer_manual()
+        self.assertEqual(app.manual_estado, P.ESTADO_INICIAL)
+        app.pista()
+        self.assertIn("Pista (BFS)", app.manual_msg[0])
+        self.assertIn("faltan 11", app.manual_msg[0])
+
+    def test_reiniciar(self):
+        app = self.app
+        app.mover_manual((1, 1))
+        app.terminar_anim()
+        app.reiniciar_manual()
+        self.assertEqual(app.manual_estado, P.ESTADO_INICIAL)
+        self.assertEqual(app.manual_hist, [])
+
+    def test_captura(self):
+        original = I.ruta_base
+        with tempfile.TemporaryDirectory() as carpeta:
+            I.ruta_base = lambda: carpeta
+            try:
+                ruta = self.app.captura("prueba.png")
+                self.assertTrue(os.path.exists(ruta))
+            finally:
+                I.ruta_base = original
