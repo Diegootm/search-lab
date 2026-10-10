@@ -531,3 +531,22 @@ class TestEtapa13ManualYBucle(unittest.TestCase):
         pygame.event.post(pygame.event.Event(pygame.QUIT))
         self.app.ejecutar()
         self.assertFalse(self.app.corriendo)
+
+
+class TestEtapa14ProgramaPrincipal(unittest.TestCase):
+    def test_generar_capturas(self):
+        with tempfile.TemporaryDirectory() as carpeta:
+            rutas = I.generar_capturas(nueva_app(), carpeta)
+            self.assertEqual(len(rutas), 12)
+            for ruta in rutas:
+                self.assertGreater(os.path.getsize(ruta), 10_000)
+
+    def test_main_py_genera_capturas(self):
+        entorno = dict(os.environ, SDL_VIDEODRIVER="dummy", PYTHONIOENCODING="utf-8",
+                       PYTHONPATH=os.path.join(CARPETA, "_referencia"))
+        with tempfile.TemporaryDirectory() as carpeta:
+            proceso = subprocess.run([sys.executable, "main.py", "--capturas", carpeta],
+                                     cwd=CARPETA, env=entorno, capture_output=True, text=True,
+                                     encoding="utf-8", errors="replace", timeout=180)
+            self.assertEqual(proceso.returncode, 0, proceso.stderr)
+            self.assertEqual(len(os.listdir(carpeta)), 12)

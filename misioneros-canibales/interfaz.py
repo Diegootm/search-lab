@@ -1238,3 +1238,89 @@ class App:
             self.actualizar(dt)
             self.dibujar()
             pygame.display.flip()
+
+
+def generar_capturas(app: App, carpeta: str) -> list[str]:
+    """Genera automáticamente capturas de cada vista (útil para el informe)."""
+    os.makedirs(carpeta, exist_ok=True)
+    rutas = []
+
+    def guardar(nombre: str) -> None:
+        app.toast = None
+        app.dibujar()
+        ruta = os.path.join(carpeta, nombre)
+        pygame.image.save(app.pantalla, ruta)
+        rutas.append(ruta)
+
+    app.cambiar_modo("sim")
+    app.seleccionar_algoritmo("bfs")
+    guardar("01_inicio.png")
+    app.resolver()
+    app.paso = 4
+    app.avanzar()
+    app.anim["t"] = 0.5
+    guardar("02_bfs_cruzando.png")
+    app.anim = None
+    app.ir_final()
+    guardar("03_bfs_solucion.png")
+    app.seleccionar_algoritmo("astar")
+    app.resolver()
+    app.paso = 6
+    guardar("04_astar_paso6.png")
+    app.ir_final()
+    guardar("05_astar_solucion.png")
+
+    app.cambiar_modo("arbol")
+    app.seleccionar_algoritmo("bfs")
+    app.arbol_mover(absoluto=5)
+    guardar("06_arbol_bfs_paso5.png")
+    app.arbol_final()
+    guardar("07_arbol_bfs_completo.png")
+    app.seleccionar_algoritmo("astar")
+    app.arbol_mover(absoluto=3)
+    guardar("08_arbol_astar_paso3.png")
+    app.arbol_final()
+    guardar("09_arbol_astar_completo.png")
+
+    app.cambiar_modo("comp")
+    guardar("10_comparacion.png")
+
+    app.cambiar_modo("manual")
+    app.reiniciar_manual()
+    app.mover_manual((2, 0))
+    guardar("11_manual_invalido.png")
+    app.mover_manual((1, 1))
+    app.terminar_anim()
+    app.pista()
+    guardar("12_manual_pista.png")
+    app.cambiar_modo("sim")
+    app.seleccionar_algoritmo("bfs")
+    return rutas
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Prototipo Misioneros y Caníbales (BFS vs A*)")
+    parser.add_argument("--capturas", nargs="?", const="capturas", metavar="CARPETA",
+                        help="genera capturas de todas las vistas y termina")
+    args = parser.parse_args(argv)
+    if args.capturas:
+        os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+    pygame.display.init()  # sólo vídeo y fuentes: el prototipo no usa sonido
+    pygame.font.init()
+    pantalla = pygame.display.set_mode((ANCHO, ALTO))
+    pygame.display.set_caption("Misioneros y Caníbales — BFS vs A*")
+    app = App(pantalla)
+    if args.capturas:
+        carpeta = args.capturas
+        if not os.path.isabs(carpeta):
+            carpeta = os.path.join(ruta_base(), carpeta)
+        for ruta in generar_capturas(app, carpeta):
+            print("Captura:", ruta)
+    else:
+        app.ejecutar()
+    pygame.quit()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
