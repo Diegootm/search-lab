@@ -140,3 +140,19 @@ class TestEtapa03Boton(unittest.TestCase):
         self.boton.dibujar(superficie, fuentes.peq_b, (20, 20))  # ratón encima
         I.Boton((10, 50, 100, 30), "Pestaña", lambda: None, oscuro=True).dibujar(
             superficie, fuentes.peq_b, (0, 0))
+
+
+class TestEtapa04DibujarPersonas(unittest.TestCase):
+    def test_misionero_y_canibal(self):
+        for tipo, color in (("M", I.COL["misionero"]), ("C", I.COL["canibal"])):
+            superficie = pygame.Surface((100, 120))
+            superficie.fill((255, 255, 255))
+            I.dibujar_persona(superficie, 50, 100, tipo)
+            self.assertEqual(superficie.get_at((45, 80))[:3], color, tipo)
+
+    def test_tamano_reducido(self):
+        superficie = pygame.Surface((100, 120))
+        superficie.fill((255, 255, 255))
+        I.dibujar_persona(superficie, 50, 100, "C", 0.5)
+        self.assertEqual(superficie.get_at((47, 90))[:3], I.COL["canibal"])
+        self.assertEqual(superficie.get_at((45, 60))[:3], (255, 255, 255))

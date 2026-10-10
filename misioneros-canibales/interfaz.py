@@ -163,3 +163,41 @@ class Boton:
             self.accion()
             return True
         return False
+
+
+# ---------------------------------------------------------------------------
+# Escena: río, orillas, personas y bote
+# ---------------------------------------------------------------------------
+
+def dibujar_persona(surf, x, y, tipo, s=1.0) -> None:
+    """Dibuja un misionero ('M') o un caníbal ('C') con los pies en (x, y)."""
+    x, y = int(x), int(y)
+    color = COL["misionero"] if tipo == "M" else COL["canibal"]
+    grosor = max(2, int(3 * s))
+    pygame.draw.line(surf, (55, 55, 60), (x - 5 * s, y - 14 * s), (x - 6 * s, y), grosor)
+    pygame.draw.line(surf, (55, 55, 60), (x + 5 * s, y - 14 * s), (x + 6 * s, y), grosor)
+    cuerpo = pygame.Rect(0, 0, int(24 * s), int(28 * s))
+    cuerpo.midbottom = (x, int(y - 11 * s))
+    pygame.draw.rect(surf, color, cuerpo, border_radius=int(7 * s))
+    cabeza = (x, int(cuerpo.top - 9 * s))
+    r = int(9 * s)
+    if tipo == "M":
+        # cruz blanca en el pecho y capucha
+        pygame.draw.line(surf, (255, 255, 255), (x, cuerpo.top + 5 * s), (x, cuerpo.bottom - 5 * s),
+                         max(2, int(3 * s)))
+        pygame.draw.line(surf, (255, 255, 255), (x - 6 * s, cuerpo.top + 11 * s),
+                         (x + 6 * s, cuerpo.top + 11 * s), max(2, int(3 * s)))
+        pygame.draw.circle(surf, color, cabeza, r + max(1, int(2 * s)))
+        pygame.draw.circle(surf, COL["piel"], (cabeza[0], cabeza[1] + int(1 * s)), r - 1)
+    else:
+        pygame.draw.circle(surf, (190, 130, 90), cabeza, r)
+        # pluma y cinta
+        top = cabeza[1] - r
+        pygame.draw.polygon(surf, (250, 200, 30), [(x + 1, top + 3), (x + 6 * s, top - 13 * s),
+                                                   (x + 9 * s, top + 1)])
+        pygame.draw.line(surf, (120, 30, 20), (x - r, cabeza[1] - 3 * s), (x + r, cabeza[1] - 3 * s),
+                         max(2, int(3 * s)))
+        # hueso en la mano
+        hx, hy = cuerpo.right + 2 * s, cuerpo.centery
+        pygame.draw.line(surf, (245, 245, 235), (hx, hy - 7 * s), (hx, hy + 7 * s), max(2, int(3 * s)))
+    pygame.draw.circle(surf, (60, 50, 45), cabeza, r, 1)
