@@ -905,3 +905,168 @@ class App:
                 frontera = frontera[:50] + "…"
             lineas.append([("    Frontera: ", f.mini, COL["suave"]), (frontera, f.mini, COL["suave"])])
         return lineas
+
+    # -- árbol de búsqueda
+    def layout_arbol(self, res: ResultadoBusqueda):
+        hijos = {n.id: [] for n in res.arbol}
+        for n in res.arbol:
+            if n.padre is not None:
+                hijos[n.padre.id].append(n)
+        pos: dict[int, tuple[float, int]] = {}
+        hojas = [0]
+
+        def asignar(n) -> float:
+            if not hijos[n.id]:
+                x = float(hojas[0])
+                hojas[0] += 1
+            else:
+                xs = [asignar(h) for h in hijos[n.id]]
+                x = (xs[0] + xs[-1]) / 2
+            pos[n.id] = (x, n.profundidad)
+            return x
+        asignar(res.arbol[0])
+        return pos, hojas[0]
+
+    def dibujar_arbol(self) -> None:
+        s = self.pantalla
+        res = self.resultado()
+        es_a = self.algoritmo == "astar"
+        lienzo = panel(s, self.LIENZO_ARBOL, self.f, f"Árbol de búsqueda — {res.algoritmo}")
+        k = self.arbol_paso
+        total = len(res.traza)
+
+        exp_idx = {p.nodo.id: i + 1 for i, p in enumerate(res.traza) if not p.es_meta}
+        meta_sel = total > 0 and res.traza[-1].es_meta and k == total
+        frontera = {e for e, _g, _h in res.traza[k - 1].frontera} if k > 0 else {P.ESTADO_INICIAL}
+        actual = res.traza[k - 1].nodo.id if k > 0 else None
+        en_ruta = {n.id for n in res.ruta} if k == total else set()
+
+        pos, hojas = self.layout_arbol(res)
+        prof_max = max(n.profundidad for n in res.arbol) or 1
+        area = pygame.Rect(lienzo.x + 60, lienzo.y + 72, lienzo.w - 80, lienzo.h - 100)
+        fila_h = area.h / prof_max
+        col_w = area.w / max(hojas, 1)
+        bw, bh = (104, 38) if es_a else (84, 28)
+
+        def centro(nodo):
+            x, d = pos[nodo.id]
+            return int(area.x + (x + 0.5) * col_w), int(area.y + d * fila_h)
+
+        def visible(nodo):
+            return nodo.padre is None or exp_idx.get(nodo.padre.id, total + 1) <= k
+
+        for d in range(prof_max + 1):
+            texto(s, f"d={d}", self.f.mini, COL["suave"], (lienzo.x + 14, area.y + d * fila_h - 7))
+
+        # Leyenda
+        ley = [((219, 234, 254), COL["acento"], "expandido"), ((254, 249, 195), COL["meta"], "frontera"),
+               ((255, 237, 213), COL["astar"], "expandiéndose"), ((220, 252, 231), COL["ok"], "objetivo / ruta")]
+        x = lienzo.x + 15
+        for fondo, borde, nombre in ley:
+            pygame.draw.rect(s, fondo, (x, lienzo.y + 40, 16, 14), border_radius=3)
+            pygame.draw.rect(s, borde, (x, lienzo.y + 40, 16, 14), 2, border_radius=3)
+            x = texto(s, nombre, self.f.mini, COL["texto"], (x + 22, lienzo.y + 40)).right + 18
+
+        for nodo in res.arbol:  # aristas
+            if nodo.padre is None or not visible(nodo):
+                continue
+            a, b = centro(nodo.padre), centro(nodo)
+            color, grosor = (COL["ok"], 3) if nodo.id in en_ruta else (COL["repetido"], 1)
+            pygame.draw.line(s, color, (a[0], a[1] + bh // 2), (b[0], b[1] - bh // 2), grosor)
+            mx, my = (a[0] + b[0]) // 2, (a[1] + b[1]) // 2
+            etiqueta = P.nombre_accion(nodo.accion)
+            img = self.f.mini.render(etiqueta, True, COL["suave"])
+            caja = img.get_rect(center=(mx, my))
+            pygame.draw.rect(s, COL["panel"], caja.inflate(4, 0))
+            s.blit(img, caja)
+
+        for nodo in res.arbol:  # nodos
+            if not visible(nodo):
+                continue
+            cx, cy = centro(nodo)
+            caja = pygame.Rect(0, 0, bw, bh)
+            caja.center = (cx, cy)
+            fondo, borde, grosor = (248, 250, 252), COL["borde"], 1
+            if exp_idx.get(nodo.id, total + 1) <= k:
+                fondo, borde = (219, 234, 254), COL["acento"]
+            if nodo.estado in frontera and exp_idx.get(nodo.id, total + 1) > k:
+                fondo, borde = (254, 249, 195), COL["meta"]
+            if nodo.id == actual:
+                fondo, borde, grosor = (255, 237, 213), COL["astar"], 3
+            if P.es_objetivo(nodo.estado):
+                fondo, borde = (220, 252, 231), COL["ok"]
+                grosor = 3 if (meta_sel or not es_a) else grosor
+            if nodo.id in en_ruta:
+                borde, grosor = COL["ok"], 3
+            pygame.draw.rect(s, fondo, caja, border_radius=7)
+            pygame.draw.rect(s, borde, caja, grosor, border_radius=7)
+            if es_a:
+                texto(s, compacto(nodo.estado), self.f.peq_b, COL["texto"], (cx, caja.y + 3), "midtop")
+                texto(s, f"{nodo.g}+{nodo.h}={nodo.f}", self.f.mini, COL["suave"], (cx, caja.y + 21),
+                      "midtop")
+            else:
+                texto(s, compacto(nodo.estado), self.f.peq_b, COL["texto"], (cx, cy), "center")
+
+        texto(s, f"Expansión {k} de {total}", self.f.negrita, COL["texto"], (850, 766), "midright")
+
+        self.dibujar_metodologia()
+        self.dibujar_detalle_expansion(res, k)
+
+    def dibujar_detalle_expansion(self, res: ResultadoBusqueda, k: int) -> None:
+        s = self.pantalla
+        r = panel(s, (880, 270, 380, 520), self.f, "Detalle del paso")
+        es_a = self.algoritmo == "astar"
+        y = r.y + 42
+        if k == 0:
+            lineas = ["La frontera contiene sólo el estado inicial",
+                      f"{P.ESTADO_INICIAL}. Pulsa «Siguiente» o",
+                      "«Reproducir» para ver cada expansión."]
+            for i, l in enumerate(lineas):
+                texto(s, l, self.f.peq, COL["texto"], (r.x + 15, y + i * 20))
+        else:
+            paso = res.traza[k - 1]
+            n = paso.nodo
+            valores = f"   g={n.g}  h={n.h}  f={n.f}" if es_a else f"   g={n.g} (profundidad)"
+            verbo = "Se selecciona" if paso.es_meta else "Se expande"
+            texto(s, f"{verbo} {n.estado}", self.f.negrita, COL["astar"], (r.x + 15, y))
+            texto(s, valores, self.f.peq, COL["suave"], (r.x + 15, y + 20))
+            y += 48
+            if paso.es_meta:
+                texto(s, "Es el estado objetivo: A* termina al", self.f.peq, COL["ok"], (r.x + 15, y))
+                texto(s, "extraerlo de la frontera (garantiza optimalidad).", self.f.peq, COL["ok"],
+                      (r.x + 15, y + 18))
+                y += 44
+            else:
+                texto(s, "Sucesores (aplicando los 5 operadores):", self.f.peq_b, COL["texto"],
+                      (r.x + 15, y))
+                y += 22
+                for suc in paso.sucesores:
+                    texto(s, f"{P.nombre_accion(suc.accion):<6}", self.f.peq_b, COL["texto"], (r.x + 20, y))
+                    texto(s, compacto(suc.estado), self.f.peq, COL["texto"], (r.x + 75, y))
+                    detalle = NOMBRE_TIPO[suc.tipo]
+                    if suc.tipo == INVALIDO:
+                        detalle = suc.motivo or detalle
+                        if len(detalle) > 30:
+                            detalle = "fuera de rango"
+                    elif es_a and suc.tipo != REPETIDO:
+                        detalle += f"  (f={suc.g}+{suc.h}={suc.g + suc.h})"
+                    texto(s, detalle, self.f.peq, COLOR_TIPO[suc.tipo], (r.x + 145, y))
+                    y += 20
+                y += 8
+            orden = "cola de prioridad por f" if es_a else "cola FIFO"
+            texto(s, f"Frontera ({orden}):", self.f.peq_b, COL["texto"], (r.x + 15, y))
+            y += 22
+            if not paso.frontera:
+                texto(s, "vacía", self.f.peq, COL["suave"], (r.x + 20, y))
+            for i, (e, g, h) in enumerate(paso.frontera[:6]):
+                extra = f"  f={g}+{h}={g + h}" if es_a else f"  g={g}"
+                texto(s, f"{i + 1}. {e}{extra}", self.f.peq, COL["texto"], (r.x + 20, y))
+                y += 19
+        y = r.bottom - 92
+        pygame.draw.line(s, COL["borde"], (r.x + 12, y - 8), (r.right - 12, y - 8))
+        datos = [("Nodos expandidos", res.nodos_expandidos), ("Nodos generados", res.nodos_generados),
+                 ("Estados visitados", res.estados_visitados),
+                 ("Solución", f"{res.longitud} cruces" if res.encontrada else "no encontrada")]
+        for i, (k_, v) in enumerate(datos):
+            texto(s, k_, self.f.peq, COL["suave"], (r.x + 15, y + i * 20))
+            texto(s, str(v), self.f.peq_b, COL["texto"], (r.right - 15, y + i * 20), "topright")

@@ -444,3 +444,36 @@ class TestEtapa10DibujoSimulacion(unittest.TestCase):
         self.app.scroll_proceso = 100000
         self.app.dibujar()
         self.assertLess(self.app.scroll_proceso, 100000)
+
+
+class TestEtapa11Arbol(unittest.TestCase):
+    def setUp(self):
+        self.app = nueva_app()
+        self.app.cambiar_modo("arbol")
+
+    def test_posiciones_del_arbol(self):
+        for alg in ("bfs", "astar"):
+            res = self.app.resultado(alg)
+            posiciones, hojas = self.app.layout_arbol(res)
+            self.assertEqual(set(posiciones), {n.id for n in res.arbol})
+            self.assertGreaterEqual(hojas, 1)
+            for nodo in res.arbol:
+                x, profundidad = posiciones[nodo.id]
+                self.assertTrue(0 <= x < hojas)
+                self.assertEqual(profundidad, nodo.profundidad)
+
+    def test_dibujar_paso_a_paso(self):
+        for alg in ("bfs", "astar"):
+            self.app.seleccionar_algoritmo(alg)
+            total = len(self.app.resultado().traza)
+            for k in (0, 1, 5, total):
+                self.app.arbol_mover(absoluto=k)
+                self.app.dibujar()
+
+    def test_reproducir_el_arbol(self):
+        total = len(self.app.resultado().traza)
+        self.app.alternar_reproduccion()
+        self.assertTrue(self.app.arbol_rep)
+        self.app.i_vel = 3
+        correr(self.app, total * 0.25 + 1)
+        self.assertEqual(self.app.arbol_paso, total)
