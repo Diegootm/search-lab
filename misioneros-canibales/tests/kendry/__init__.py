@@ -1,0 +1,1 @@
+# Pruebas de la parte de Kendry (formulación del problema).
