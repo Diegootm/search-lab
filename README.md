@@ -1,183 +1,77 @@
 # Search Lab — Proyecto de Inteligencia Artificial
 
-Colección de solucionadores de problemas clásicos de IA mediante algoritmos de
-búsqueda. Proyecto del primer parcial de la materia Inteligencia Artificial,
-Universidad Mayor de San Simón (UMSS).
+Proyecto del primer parcial de Inteligencia Artificial, Ingeniería de Sistemas, Universidad Mayor de San Simón. Integra dos problemas y compara dos metodologías por problema. La rama `dev` reúne el código de ambos prototipos.
 
-## Problemas implementados
+| Problema | Metodologías | Documentación técnica |
+|---|---|---|
+| Misioneros y Caníbales | BFS y A* | [Reglas, ejecución y guía de lectura](misioneros-canibales/README.md) |
+| Juego 21 | Expectiminimax y su variante con poda Alfa-Beta | [Reglas, ejecución y guía de lectura](juego-21/README.md) |
 
-| Problema | Carpeta | Rama | Equipo |
-|----------|---------|------|--------|
-| Misioneros y caníbales | `misioneros-canibales/` | `feature/misioneros-canibales` | 3 personas |
-| Juego del 21 | `juego-21/` | `feature/juego-21` | 2 personas |
-
-Cada carpeta contiene su propio README con la descripción del problema, la
-metodología de resolución y las instrucciones para ejecutarlo.
-
-## Tecnologías
-
-- **Lenguaje:** Python 3.12 (todos deben usar la misma versión)
-- **Interfaces gráficas:** Pygame (misioneros) y Tkinter (juego del 21)
-- **Ejecutables:** PyInstaller
+Ambas interfaces utilizan **Pygame**.
 
 ## Estructura del repositorio
 
-```
+```text
 search-lab/
-├── misioneros-canibales/
-│   ├── README.md
-│   └── (código + ejecutable)
-├── juego-21/
-│   ├── README.md
-│   └── (código + ejecutable)
-└── README.md
+├── juego-21/                Código y documentación técnica
+├── misioneros-canibales/    Código, pruebas y documentación técnica
+├── ejecutables/            Aplicaciones de Windows listas para usar
+│   ├── Juego21.exe
+│   └── Misioneros-Canibales.exe
+├── documentacion/
+│   └── INFORME.md           Guía única del informe de ambos problemas
+├── scripts/
+│   └── generar_ejecutables.ps1
+├── requirements.txt        Dependencias compartidas de ejecución
+└── README.md               Inicio y organización del proyecto
 ```
 
----
+Las guías de lectura están integradas en los README de cada problema. La planificación del informe está únicamente en [documentacion/INFORME.md](documentacion/INFORME.md).
 
-## Guía de inicio (léela antes de programar)
+## Ejecutar en Windows sin instalar Python
 
-### 1. Verificar la versión de Python
+Abrir con doble clic [Juego21.exe](ejecutables/Juego21.exe) o [Misioneros-Canibales.exe](ejecutables/Misioneros-Canibales.exe).
 
-Todos deben tener **Python 3.12**. Verifica con:
+Los ejecutables incluyen su entorno de ejecución. Los binarios existentes se trasladaron sin alterarlos; después de modificar la lógica o la interfaz, hay que regenerarlos para distribuir esos cambios.
 
-```bash
-python --version
+## Ejecutar desde el código fuente
+
+Usar Python 3.12. Desde la raíz, en PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe juego-21/interfaz.py
+.\.venv\Scripts\python.exe misioneros-canibales/main.py
 ```
 
-Si no aparece 3.12, descárgala desde https://www.python.org/downloads/
+Se llama directamente al Python del entorno para evitar depender de su activación. Los demás comandos requieren ese Python o uno con las dependencias instaladas.
 
-### 2. Clonar el repositorio
+## Comparar los algoritmos
 
-```bash
-git clone https://github.com/Diegootm/search-lab.git
-cd search-lab
+```powershell
+python juego-21/comparar.py
+python misioneros-canibales/comparar.py --repeticiones 200
 ```
 
-### 3. Crear y activar el entorno virtual
+Las comparaciones se ejecutan por separado: cada módulo `comparar.py` corresponde a un problema diferente.
 
-El entorno virtual aísla las librerías del proyecto para que no choquen con
-otras de tu computadora.
+## Generar los ejecutables de Windows
 
-**Crear el entorno (una sola vez):**
+Instalar PyInstaller en el mismo entorno y ejecutar el script desde la raíz:
 
-```bash
-python -m venv venv
+```powershell
+.\.venv\Scripts\python.exe -m pip install pyinstaller
+.\scripts\generar_ejecutables.ps1 -Python .\.venv\Scripts\python.exe
 ```
 
-**Activar el entorno (cada vez que vayas a trabajar):**
+El script compila cada aplicación sin consola en un único `.exe`, coloca los resultados en `ejecutables/` y mantiene temporales y especificaciones generadas en `build/`. Debe ejecutarse en Windows.
 
-En Windows:
-```bash
-venv\Scripts\activate
-```
+## Preparar la entrega del informe
 
-En Linux / Mac:
-```bash
-source venv/bin/activate
-```
+1. Seguir [la guía del informe](documentacion/INFORME.md), que cubre ambos problemas.
+2. Guardar capturas y tablas en `documentacion/`, organizadas por problema.
+3. Adjuntar el código de ambas carpetas y los binarios de `ejecutables/`.
+4. Excluir entornos virtuales, `__pycache__/`, `build/` y `dist/` de la entrega; son archivos locales o generados.
 
-Cuando esté activo, verás `(venv)` al inicio de la línea de comandos.
-
-**Desactivar cuando termines:**
-```bash
-deactivate
-```
-
-### 4. Instalar las librerías
-
-Con el entorno activado:
-
-```bash
-pip install pygame
-pip install pyinstaller
-```
-
-(Tkinter ya viene incluido con Python, no se instala.)
-
----
-
-## Guía de ramas (Git)
-
-El proyecto usa estas ramas:
-
-| Rama | Para qué sirve |
-|------|----------------|
-| `main` | Rama principal. Solo versiones finales y estables. |
-| `dev` | Integración. Aquí se junta el trabajo de ambos equipos antes de pasar a `main`. |
-| `feature/misioneros-canibales` | Trabajo del equipo de misioneros y caníbales. |
-| `feature/juego-21` | Trabajo del equipo del juego del 21. |
-
-### Cómo moverte a tu rama
-
-**Ver todas las ramas disponibles:**
-```bash
-git branch -a
-```
-
-**Cambiar a la rama que te toca:**
-```bash
-git checkout feature/misioneros-canibales
-```
-o
-```bash
-git checkout feature/juego-21
-```
-
-### Flujo de trabajo diario
-
-```bash
-# 1. Activa tu entorno virtual
-venv\Scripts\activate
-
-# 2. Muévete a tu rama
-git checkout feature/juego-21
-
-# 3. Trae los últimos cambios
-git pull
-
-# 4. ... programa ...
-
-# 5. Guarda tus cambios
-git add .
-git commit -m "describe qué hiciste"
-
-# 6. Sube tus cambios a tu rama
-git push
-```
-
-> **Regla importante:** nadie programa directo en `main`. Cada equipo trabaja en
-> su rama `feature/...`, y cuando algo está listo se integra primero a `dev`.
-
----
-
-## Cómo generar el ejecutable (.exe)
-
-Dentro de la carpeta de tu problema, con el entorno virtual activado:
-
-```bash
-pyinstaller --onefile --windowed nombre_del_archivo.py
-```
-
-El ejecutable se genera en la carpeta `dist/`. Cópialo a la carpeta de tu problema.
-
-- `--onefile` → genera un solo archivo .exe
-- `--windowed` → no abre la consola negra al correr la app
-
----
-
-## Equipo
-
-**Misioneros y caníbales:**
-- [Nombre 1]
-- [Nombre 2]
-- [Nombre 3]
-
-**Juego del 21:**
-- [Nombre 4]
-- [Nombre 5]
-
-## Materia
-
-Inteligencia Artificial — Lic. Patricia Rodríguez Bilbao
-Ingeniería de Sistemas, UMSS — 2026
+Las pruebas, reglas y comandos específicos están en el README de cada problema.
