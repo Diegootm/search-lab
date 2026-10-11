@@ -2,6 +2,7 @@
 venv/
 .venv/
 ENV/
+env/
 
 # Python
 __pycache__/
@@ -11,9 +12,13 @@ __pycache__/
 build/
 dist/
 *.egg-info/
+*.spec
+.pytest_cache/
 
 # Archivos del sistema y editores
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+*.swp
+*$py.class

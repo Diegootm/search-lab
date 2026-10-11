@@ -1,11 +1,11 @@
 
-"""Pruebas de la parte de Kendry: formulación del problema (problema.py).
+"""Pruebas de formulación del problema (problema.py).
 
-Cada clase TestEtapaXX corresponde a una etapa de CODIGO_POR_ETAPAS.md.
+Las pruebas se agrupan por funcionalidades de la aplicación.
 Ejecutar desde la carpeta misioneros-canibales:
 
-    python -m unittest discover -s tests/kendry -v              (todas)
-    python -m unittest discover -s tests/kendry -k Etapa03 -v   (solo una etapa)
+    python -m unittest discover -s tests -v              (todas)
+    python -m unittest discover -s tests -k Etapa03 -v   (solo una etapa)
 """
 
 import os
@@ -13,7 +13,7 @@ import sys
 import unittest
 from collections import deque
 
-CARPETA = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+CARPETA = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, CARPETA)
 
 import problema as P  # noqa: E402

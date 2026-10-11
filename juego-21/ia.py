@@ -7,7 +7,7 @@ from math import inf
 
 from reglas import tipo, sucesores, estadoInicial
 from minimax import minimax, Contador
-from alfaBeta import alfabeta
+from alfa_beta import alfabeta
 
 
 def mejor_accion(e, metodo="alfabeta"):

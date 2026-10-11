@@ -1,17 +1,14 @@
-"""Pruebas de la parte de Greco: métricas (metricas.py).
+"""Pruebas de métricas (metricas.py).
 
-    python -m unittest discover -s tests/greco -k Etapa09 -v
+    python -m unittest discover -s tests -k Etapa09 -v
 """
 
 import os
 import sys
 import unittest
 
-CARPETA = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+CARPETA = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, CARPETA)
-# Mientras Kendry termina problema.py se usa la copia temporal de _referencia/
-# (ver GUIA_GIT.md). Si existe el archivo real, se usa el real.
-sys.path.append(os.path.join(CARPETA, "_referencia"))
 import busqueda as B  # noqa: E402
 import metricas as M  # noqa: E402
 

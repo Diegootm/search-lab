@@ -1,10 +1,10 @@
-"""Pruebas de la parte de Greco: algoritmos BFS y A* (busqueda.py).
+"""Pruebas de algoritmos BFS y A* (busqueda.py).
 
-Cada clase TestEtapaXX corresponde a una etapa de CODIGO_POR_ETAPAS.md.
+Las pruebas se agrupan por funcionalidades de la aplicación.
 Ejecutar desde la carpeta misioneros-canibales:
 
-    python -m unittest discover -s tests/greco -v              (todas)
-    python -m unittest discover -s tests/greco -k Etapa06 -v   (solo una etapa)
+    python -m unittest discover -s tests -v              (todas)
+    python -m unittest discover -s tests -k Etapa06 -v   (solo una etapa)
 """
 
 import os
@@ -12,11 +12,8 @@ import sys
 import unittest
 from collections import deque
 
-CARPETA = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+CARPETA = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, CARPETA)
-# Mientras Kendry termina problema.py se usa la copia temporal de _referencia/
-# (ver GUIA_GIT.md). Si existe el archivo real, se usa el real.
-sys.path.append(os.path.join(CARPETA, "_referencia"))
 import problema as P  # noqa: E402
 import busqueda as B  # noqa: E402
 

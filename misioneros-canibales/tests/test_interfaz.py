@@ -1,10 +1,10 @@
-"""Pruebas de la parte de Gabriel: interfaz Pygame (interfaz.py y main.py).
+"""Pruebas de interfaz Pygame (interfaz.py y main.py).
 
-Cada clase TestEtapaXX corresponde a una etapa de CODIGO_POR_ETAPAS.md.
+Las pruebas se agrupan por funcionalidades de la aplicación.
 Se ejecutan sin abrir ventanas (SDL_VIDEODRIVER=dummy). Desde misioneros-canibales:
 
-    python -m unittest discover -s tests/gabriel -v              (todas)
-    python -m unittest discover -s tests/gabriel -k Etapa05 -v   (solo una etapa)
+    python -m unittest discover -s tests -v              (todas)
+    python -m unittest discover -s tests -k Etapa05 -v   (solo una etapa)
 """
 
 import os
@@ -16,11 +16,8 @@ import unittest
 os.environ["SDL_VIDEODRIVER"] = "dummy"          # sin ventana real
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 
-CARPETA = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+CARPETA = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, CARPETA)
-# Mientras Kendry y Greco terminan, problema/busqueda/metricas se toman de la copia
-# temporal _referencia/ (ver GUIA_GIT.md). Si existe el archivo real, se usa el real.
-sys.path.append(os.path.join(CARPETA, "_referencia"))
 
 import pygame  # noqa: E402
 
@@ -74,9 +71,9 @@ class TestEtapa01Estructura(unittest.TestCase):
         self.assertEqual(set(I.NOMBRE_H), set(P.HEURISTICAS))
 
     def test_archivos_del_proyecto(self):
-        with open(os.path.join(CARPETA, "requirements.txt"), encoding="utf-8") as archivo:
+        with open(os.path.join(os.path.dirname(CARPETA), "requirements.txt"), encoding="utf-8") as archivo:
             self.assertIn("pygame", archivo.read())
-        with open(os.path.join(CARPETA, ".gitignore"), encoding="utf-8") as archivo:
+        with open(os.path.join(os.path.dirname(CARPETA), ".gitignore"), encoding="utf-8") as archivo:
             self.assertIn("__pycache__/", archivo.read())
 
 
@@ -542,8 +539,7 @@ class TestEtapa14ProgramaPrincipal(unittest.TestCase):
                 self.assertGreater(os.path.getsize(ruta), 10_000)
 
     def test_main_py_genera_capturas(self):
-        entorno = dict(os.environ, SDL_VIDEODRIVER="dummy", PYTHONIOENCODING="utf-8",
-                       PYTHONPATH=os.path.join(CARPETA, "_referencia"))
+        entorno = dict(os.environ, SDL_VIDEODRIVER="dummy", PYTHONIOENCODING="utf-8")
         with tempfile.TemporaryDirectory() as carpeta:
             proceso = subprocess.run([sys.executable, "main.py", "--capturas", carpeta],
                                      cwd=CARPETA, env=entorno, capture_output=True, text=True,

@@ -10,7 +10,7 @@ from math import inf
 
 import reglas
 from minimax import minimax, Contador
-from alfaBeta import alfabeta
+from alfa_beta import alfabeta
 
 
 def correr(metodo, tiros):

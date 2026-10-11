@@ -1,6 +1,6 @@
-"""Pruebas de la parte de Greco: comparación por consola (comparar.py).
+"""Pruebas de comparación por consola (comparar.py).
 
-    python -m unittest discover -s tests/greco -k Etapa13 -v
+    python -m unittest discover -s tests -k Etapa13 -v
 """
 
 import io
@@ -9,11 +9,8 @@ import sys
 import unittest
 from contextlib import redirect_stdout
 
-CARPETA = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+CARPETA = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, CARPETA)
-# Mientras Kendry termina problema.py se usa la copia temporal de _referencia/
-# (ver GUIA_GIT.md). Si existe el archivo real, se usa el real.
-sys.path.append(os.path.join(CARPETA, "_referencia"))
 import busqueda as B  # noqa: E402
 import comparar as C  # noqa: E402
 

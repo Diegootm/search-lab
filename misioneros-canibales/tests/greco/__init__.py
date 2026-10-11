@@ -1,1 +1,0 @@
-# Pruebas de la parte de Greco (busqueda, metricas, y comparar).
