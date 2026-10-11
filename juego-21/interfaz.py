@@ -19,8 +19,13 @@ import pygame
 import reglas
 from reglas import RESULTADOS, valor, nombre, utilidad
 from dibujos import (
-    ALTO, ANCHO, AZUL, BLANCO, COLOR_ALFABETA, COLOR_JUGADOR, COLOR_MINIMAX,
-    CX, FONDO, GRIS, MADERA, ORO, PANEL, PANO, PANO_OSC, ROJO, VERDE,
+    ALTO, ANCHO, BLANCO, CX, ORO, PANEL as PANEL_MENU,
+    AZUL_JUEGO as AZUL, FONDO_JUEGO as FONDO, GRIS_JUEGO as GRIS,
+    MADERA_JUEGO as MADERA, PANEL_JUEGO as PANEL, PANO_JUEGO as PANO,
+    PANO_OSC_JUEGO as PANO_OSC, ROJO_JUEGO as ROJO, VERDE_JUEGO as VERDE,
+    COLOR_ALFABETA_JUEGO as COLOR_ALFABETA,
+    COLOR_JUGADOR_JUEGO as COLOR_JUGADOR, COLOR_MINIMAX_JUEGO as COLOR_MINIMAX,
+    BORDE_JUEGO, HUECO_JUEGO,
     aclarar, dibujar_dado, dibujar_sombra, partir_lineas, pose_cubilete,
     rombo, suave, superficie_cubilete, superficie_fondo_menu, texto,
 )
@@ -424,7 +429,7 @@ class Juego:
         velo.fill((4, 6, 10, 215))
         p.blit(velo, (0, 0))
         t = AYUDA_TARJETA
-        pygame.draw.rect(p, PANEL, t, border_radius=22)
+        pygame.draw.rect(p, PANEL_MENU, t, border_radius=22)
         pygame.draw.rect(p, ORO, t, 4, border_radius=22)
         texto(p, "CÓMO SE JUEGA", 40, ORO, (CX, t.y + 44), "center", True, True)
         pygame.draw.line(p, ORO, (CX - 120, t.y + 76), (CX + 120, t.y + 76), 2)
@@ -500,7 +505,7 @@ class Juego:
                 dibujar_sombra(p, x, y + 46, DADO_TAM, 90)
                 dibujar_dado(p, x, y, DADO_TAM, self.dados_mesa[i], self.angulos[i])
         else:
-            texto(p, "Aquí aparecerán los dados", 18, (120, 190, 160),
+            texto(p, "Aquí aparecerán los dados", 18, GRIS,
                   (CX, 392), "center")
 
         # cubilete
@@ -528,7 +533,7 @@ class Juego:
                 pygame.draw.rect(p, PANEL, r, border_radius=18)
                 pygame.draw.rect(p, color, r, 4, border_radius=18)
             else:
-                pygame.draw.rect(p, (52, 68, 78), r, 2, border_radius=18)
+                pygame.draw.rect(p, BORDE_JUEGO, r, 2, border_radius=18)
             cx = r.centerx
             texto(p, f"JUGADOR {j}", 30, color, (cx, r.y + 34), "center", True)
             rol = "MAX" if j == "A" else "MIN"
@@ -556,7 +561,7 @@ class Juego:
                 if d and not (self.fase == "LANZANDO" and self.turno == j):
                     dibujar_dado(p, px, r.y + 280, 56, d[i])
                 else:
-                    pygame.draw.rect(p, (34, 50, 60), (px - 28, r.y + 252, 56, 56),
+                    pygame.draw.rect(p, HUECO_JUEGO, (px - 28, r.y + 252, 56, 56),
                                      border_radius=11)
             usados = self.tiros[j]
             texto(p, f"Lanzamientos: {usados} de {self.max_tiros}", 17, GRIS,
@@ -597,7 +602,7 @@ class Juego:
             y += 20
         # fila acumulada: suma de TODAS las decisiones de la partida
         y += 3
-        pygame.draw.line(p, (52, 68, 78), (caja.x + 16, y), (caja.right - 16, y), 1)
+        pygame.draw.line(p, BORDE_JUEGO, (caja.x + 16, y), (caja.right - 16, y), 1)
         y += 4
         n = len(reg)
         texto(p, f"ACUMULADO ({n} " + ("decisión" if n == 1 else "decisiones") + ")", 16, ORO,
@@ -616,7 +621,7 @@ class Juego:
         texto(p, "Minimax", 15, COLOR_MINIMAX, (x + 300, y), "topright", True)
         texto(p, "Alfa-Beta", 15, COLOR_ALFABETA, (x + 420, y), "topright", True)
         y += 26
-        pygame.draw.line(p, (52, 68, 78), (x, y), (x + 420, y), 1)
+        pygame.draw.line(p, BORDE_JUEGO, (x, y), (x + 420, y), 1)
         y += 8
         for etiqueta, a, b, mejor in filas:
             texto(p, etiqueta, 17, GRIS, (x, y + 1), "topleft")
@@ -629,7 +634,7 @@ class Juego:
 
     def dibujar_fin(self, p):
         velo = pygame.Surface((ANCHO, ALTO), pygame.SRCALPHA)
-        velo.fill((6, 10, 14, 205))
+        velo.fill((20, 14, 11, 205))
         p.blit(velo, (0, 0))
         tarjeta = FIN_TARJETA
         pygame.draw.rect(p, PANEL, tarjeta, border_radius=22)
@@ -655,7 +660,7 @@ class Juego:
 
         # ---- comparación Minimax vs Alfa-Beta ----
         x_izq, x_der, y_tab = 90, 590, y0 + 170
-        pygame.draw.line(p, (52, 68, 78), (CX, y_tab), (CX, y_tab + 258), 1)
+        pygame.draw.line(p, BORDE_JUEGO, (CX, y_tab), (CX, y_tab + 258), 1)
 
         rm, ra = self.registro["minimax"], self.registro["alfabeta"]
         igual_partida = None

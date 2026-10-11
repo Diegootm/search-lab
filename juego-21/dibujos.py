@@ -27,6 +27,23 @@ COLOR_MINIMAX = (255, 150, 120)       # coral
 COLOR_ALFABETA = (190, 150, 255)      # violeta
 
 
+# La partida usa los tonos de madera y luz del menu sin cambiar sus colores.
+FONDO_JUEGO = (24, 19, 17)
+PANEL_JUEGO = (43, 31, 27)
+PANO_JUEGO = (83, 36, 33)             # caoba del tapete
+PANO_OSC_JUEGO = (57, 25, 23)
+MADERA_JUEGO = (132, 88, 48)
+GRIS_JUEGO = (194, 175, 146)          # texto secundario color pergamino
+AZUL_JUEGO = (218, 174, 132)          # cobre claro para el jugador B
+VERDE_JUEGO = (232, 205, 146)         # resultados favorables en dorado claro
+ROJO_JUEGO = (222, 135, 108)          # terracota para las advertencias
+BORDE_JUEGO = (113, 83, 58)
+HUECO_JUEGO = (59, 42, 34)
+COLOR_JUGADOR_JUEGO = {"A": ORO, "B": AZUL_JUEGO}
+COLOR_MINIMAX_JUEGO = (236, 190, 100)
+COLOR_ALFABETA_JUEGO = (218, 174, 132)
+
+
 # ---------------------------------------------------------------
 # Texto y utilidades de dibujo
 # ---------------------------------------------------------------
