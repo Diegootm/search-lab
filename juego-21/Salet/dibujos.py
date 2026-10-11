@@ -9,7 +9,7 @@ import pygame
 # ---------------------------------------------------------------
 # Tamaño de pantalla y colores
 # ---------------------------------------------------------------
-ANCHO, ALTO = 1100, 700
+ANCHO, ALTO = 1100, 750
 CX = 550                              # centro horizontal de la mesa
 FONDO = (14, 22, 28)
 PANEL = (22, 34, 42)
